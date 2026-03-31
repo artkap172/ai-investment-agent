@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Investment Agent Pro — Аналитика MOEX</title>
+<title>AI Investment Agent Pro — Профессиональный AI-ассистент по рынку MOEX</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; display: flex; flex-direction: column; }
@@ -37,189 +37,200 @@ body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3;
 .card { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
 .widget-container { height: 400px; background: #161b22; border-radius: 8px; border: 1px solid #21262d; overflow: hidden; margin-top: 10px; }
 .footer { padding: 6px 20px; background: #161b22; border-top: 1px solid #21262d; font-size: 10px; color: #8b949e; display: flex; justify-content: space-between; }
+.futures-alert { background: #1f2937; border-left: 4px solid #f59e0b; padding: 12px; margin-bottom: 16px; border-radius: 4px; }
+.futures-alert strong { color: #f59e0b; }
+.futures-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+.futures-card { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 16px; }
+.futures-card h3 { color: #58a6ff; margin-bottom: 8px; font-size: 14px; }
+.futures-card p { font-size: 12px; line-height: 1.4; color: #8b949e; margin-bottom: 8px; }
+.info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0; }
+.info-box { background: #1f2937; padding: 12px; border-radius: 8px; text-align: center; }
+.info-box h4 { font-size: 11px; text-transform: uppercase; color: #8b949e; margin-bottom: 4px; }
+.info-box .value { font-size: 16px; font-weight: 700; color: #58a6ff; }
+.prompt-template { background: #1f2937; border: 1px solid #30363d; padding: 16px; border-radius: 8px; margin-top: 16px; }
+.prompt-template h3 { color: #58a6ff; margin-bottom: 12px; font-size: 14px; }
+.prompt-template textarea { width: 100%; min-height: 120px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; color: #e6edf3; font-size: 13px; line-height: 1.6; font-family: inherit; resize: vertical; }
 </style>
 </head>
-<body>
-<div class="ticker-tape">
-  <div class="tradingview-widget-container">
-    <div class="tradingview-widget-container__widget"></div>
-    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-    {
-      "symbols": [
-        {"proName": "MOEX:IMOEX", "title": "Индекс Мосбиржи"},
-        {"proName": "MOEX:SBER", "title": "Сбербанк"},
-        {"proName": "MOEX:GAZP", "title": "Газпром"},
-        {"proName": "MOEX:LKOH", "title": "Лукойл"},
-        {"proName": "FX_IDC:USDRUB", "title": "USD/RUB"}
-      ],
-      "showSymbolLogo": true, "colorTheme": "dark", "isTransparent": true, "displayMode": "adaptive", "locale": "ru"
-    }
-    </script>
-  </div>
+<body><div class="ticker-tape">
+<div class="tradingview-widget-container">
+<div class="tradingview-widget-container__widget"></div>
+<script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+{
+"symbols": [
+{"proName": "MOEX:IMOEX", "title": "Индекс Мосбиржи"},
+{"proName": "MOEX:SBER", "title": "Сбербанк"},
+{"proName": "MOEX:GAZP", "title": "Газпром"},
+{"proName": "MOEX:LKOH", "title": "Лукойл"},
+{"proName": "FX_IDC:USDRUB", "title": "USD/RUB"}
+],
+"showSymbolLogo": true,
+"colorTheme": "dark",
+"isTransparent": true,
+"displayMode": "adaptive",
+"locale": "ru"
+}
+</script>
+</div>
 </div>
 <div class="header">
-  <h1>🤖 AI Investment Agent Pro</h1>
-  <span class="badge">PRO</span>
-  <span style="margin-left:auto; font-size:11px; color:#8b949e;">Powered by Groq Llama 3.3</span>
+<h1>AI Investment Agent Pro</h1>
+<span class="badge">PRO</span>
+<span style="margin-left:auto; font-size:11px; color:#8b949e;">Powered by Groq Llama 3.3</span>
 </div>
 <div class="layout">
-  <aside class="sidebar">
-    <h3>⚙️ Настройки</h3>
-    <input class="api-input" id="apiKey" type="password" placeholder="Groq API Key" />
-    <button class="btn btn-primary" onclick="saveKey()">Сохранить</button>
-    
-    <h3>📊 Акции MOEX</h3>
-    <div class="ticker-grid">
-      <button class="ticker-btn" onclick="analyze('SBER')">SBER</button>
-      <button class="ticker-btn" onclick="analyze('GAZP')">GAZP</button>
-      <button class="ticker-btn" onclick="analyze('LKOH')">LKOH</button>
-      <button class="ticker-btn" onclick="analyze('ROSN')">ROSN</button>
-      <button class="ticker-btn" onclick="analyze('YNDX')">YNDX</button>
-      <button class="ticker-btn" onclick="analyze('MGNT')">MGNT</button>
-    </div>
-
-    <h3>📉 Фьючерсы</h3>
-    <div class="ticker-grid">
-      <button class="ticker-btn" onclick="analyze('MXI')">MXI</button>
-      <button class="ticker-btn" onclick="analyze('Si')">Si</button>
-      <button class="ticker-btn" onclick="analyze('BR')">BR</button>
-      <button class="ticker-btn" onclick="analyze('GD')">GD</button>
-    </div>
-
-    <h3>⚡ Быстрые действия</h3>
-    <button class="quick-btn" onclick="quickAsk('Обзор рынка РФ на сегодня')">📈 Обзор рынка</button>
-    <button class="quick-btn" onclick="quickAsk('Анализ рисков портфеля 2026')">⚠️ Риски 2026</button>
-    <button class="quick-btn" onclick="quickAsk('Сравнение акций и фьючерсов')">⚖️ Акции vs Фьючерсы</button>
-  </aside>
-
-  <main class="main">
-    <div class="tabs">
-      <div class="tab active" onclick="showTab('chat')">💬 Чат</div>
-      <div class="tab" onclick="showTab('market')">📈 Графики</div>
-      <div class="tab" onclick="showTab('futures')">📉 Анализ ТА</div>
-    </div>
-
-    <div class="tab-content active" id="chat-tab">
-      <div class="chat-messages" id="chatMessages">
-        <div class="message ai">Добро пожаловать в <strong>Investment Agent Pro</strong>. Введите тикер или выберите действие слева для начала анализа.</div>
-      </div>
-      <div class="chat-input-area">
-        <textarea class="chat-input" id="userMessage" placeholder="Спросите про акции или фьючерсы..." rows="1"></textarea>
-        <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
-      </div>
-    </div>
-
-    <div class="tab-content" id="market-tab">
-      <div class="card">
-        <h3>График Индекса Мосбиржи</h3>
-        <div class="widget-container">
-          <div id="tradingview_chart"></div>
-          <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-          <script type="text/javascript">
-            new TradingView.widget({
-              "autosize": true, "symbol": "MOEX:IMOEX", "interval": "D", "timezone": "Europe/Moscow",
-              "theme": "dark", "style": "1", "locale": "ru", "toolbar_bg": "#f1f3f6",
-              "enable_publishing": false, "hide_side_toolbar": false, "allow_symbol_change": true, "container_id": "tradingview_chart"
-            });
-          </script>
-        </div>
-      </div>
-    </div>
-
-    <div class="tab-content" id="futures-tab">
-      <div class="card">
-        <h3>Технический анализ (Rating)</h3>
-        <div class="widget-container" style="height: 450px;">
-          <div class="tradingview-widget-container">
-            <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
-            {
-              "interval": "1D", "width": "100%", "isTransparent": true, "height": "100%", "symbol": "MOEX:SBER", "showIntervalTabs": true, "displayMode": "single", "locale": "ru", "colorTheme": "dark"
-            }
-            </script>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
+<aside class="sidebar">
+<h3>⚙️ Настройки</h3>
+<input class="api-input" id="apiKey" type="password" placeholder="Groq API Key">
+<button class="btn btn-primary" onclick="saveKey()">Сохранить</button>
+<h3>📊 Акции MOEX</h3>
+<div class="ticker-grid">
+<button class="ticker-btn" onclick="analyze('SBER')">SBER</button>
+<button class="ticker-btn" onclick="analyze('GAZP')">GAZP</button>
+<button class="ticker-btn" onclick="analyze('LKOH')">LKOH</button>
+<button class="ticker-btn" onclick="analyze('ROSN')">ROSN</button>
+<button class="ticker-btn" onclick="analyze('YNDX')">YNDX</button>
+<button class="ticker-btn" onclick="analyze('MGNT')">MGNT</button>
 </div>
-
+<h3>📉 Фьючерсы MOEX</h3>
+<div class="ticker-grid">
+<button class="ticker-btn" onclick="analyze('MXI')">MXI</button>
+<button class="ticker-btn" onclick="analyze('Si')">Si</button>
+<button class="ticker-btn" onclick="analyze('BR')">BR</button>
+<button class="ticker-btn" onclick="analyze('GD')">GD</button>
+<button class="ticker-btn" onclick="analyze('SBRF')">SBRF</button>
+<button class="ticker-btn" onclick="analyze('GAZR')">GAZR</button>
+</div>
+<h3>⚡ Быстрые запросы</h3>
+<button class="quick-btn" onclick="quickAsk('Проведи обзор рынка МОСБИРЖИ на сегодня.')">📈 Обзор рынка</button>
+<button class="quick-btn" onclick="quickAsk('Какие главные риски для рынка акций РФ в 2026 году?')">⚠️ Риски 2026</button>
+<button class="quick-btn" onclick="quickAsk('Сравни доходность и риски акций и фьючерсов на текущем рынке.')">⚖️ Акции vs Фьючерсы</button>
+<button class="quick-btn" onclick="quickAsk('Сделай обзор ликвидных фьючерсов на MOEX (MXI, Si, BR).')">📉 Обзор фьючерсов</button>
+<button class="quick-btn" onclick="quickAsk('Анализ фьючерса vs базового актива (напр. SBER vs SBRF).')">📊 Фьючерс vs Базис</button>
+</aside>
+<main class="main">
+<div class="tabs">
+<div class="tab active" onclick="showTab('chat')">💬 Чат</div>
+<div class="tab" onclick="showTab('charts')">📈 Графики</div>
+<div class="tab" onclick="showTab('futures')">📉 Фьючерсы</div>
+</div>
+<div id="chat-tab" class="tab-content active">
+<div class="chat-messages" id="chatMessages">
+<div class="message ai">
+Добро пожаловать в <strong>Investment Agent Pro</strong>. Анализируйте акции, облигации и фьючерсы Московской биржи в одном интерфейсе.
+</div>
+</div>
+<div class="chat-input-area">
+<textarea class="chat-input" id="userMessage" placeholder="Спросите про акции, ОФЗ или фьючерсы MOEX..."></textarea>
+<button class="send-btn" onclick="sendMessage()">➤</button>
+</div>
+</div>
+<div id="charts-tab" class="tab-content">
+<div class="card">
+<h3>График Индекса Мосбиржи</h3>
+<div class="widget-container" id="tradingview_chart"></div>
+</div>
+</div>
+<div id="futures-tab" class="tab-content">
+<div class="futures-alert">
+<strong>Срочный рынок:</strong> фьючерсы несут повышенный риск из-за плеча, вариационной маржи, гарантийного обеспечения и даты экспирации.
+</div>
+<div class="futures-grid">
+<div class="futures-card"><h3>MXI — индекс Мосбиржи</h3><p>Для направленного взгляда на широкий рынок и общего риск-аппетита.</p></div>
+<div class="futures-card"><h3>Si — USD/RUB</h3><p>Для валютного хеджа, сценариев по рублю и внешним шокам.</p></div>
+<div class="futures-card"><h3>BR — нефть Brent</h3><p>Для сырьевых сценариев и чувствительности российского рынка к нефти.</p></div>
+<div class="futures-card"><h3>GD — золото</h3><p>Для защитных сценариев и глобальной неопределенности.</p></div>
+</div>
+<div class="prompt-template">
+<h3>📋 Шаблон профессионального запроса</h3>
+<textarea id="futuresPrompt">Сделай анализ фьючерса [Тикер] на MOEX: базовый актив, ближайшая экспирация, ликвидность, волатильность, ГО, ключевые уровни, сценарий long/short, риски удержания позиции и сравнение с базовым активом.</textarea>
+<button class="btn btn-secondary" onclick="quickAsk(document.getElementById('futuresPrompt').value)" style="margin-top:10px">Использовать шаблон</button>
+</div>
+</div>
+</main>
+</div>
 <footer class="footer">
-  <span>© 2026 Investment Agent Pro</span>
-  <span>System Ready · MOEX Connected</span>
+<span>© 2026 Investment Agent Pro</span>
+<span>System Ready · MOEX Connected</span>
 </footer>
-
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 <script>
 const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const MODEL = 'llama-3.3-70b-versatile';
-
 function getKey() { return localStorage.getItem('groqApiKey') || ''; }
 function saveKey() {
-  const k = document.getElementById('apiKey').value.trim();
-  if(!k) return alert('Введите ключ');
-  localStorage.setItem('groqApiKey', k);
-  alert('Ключ сохранен');
+const k = document.getElementById('apiKey').value.trim();
+if(!k) return alert('Введите ключ');
+localStorage.setItem('groqApiKey', k);
+alert('Ключ сохранен');
 }
-
 window.onload = () => {
-  document.getElementById('apiKey').value = getKey();
-  document.getElementById('userMessage').addEventListener('keydown', e => {
-    if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-  });
+document.getElementById('apiKey').value = getKey();
+document.getElementById('userMessage').addEventListener('keydown', e => {
+if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+new TradingView.widget({
+"autosize": true,
+"symbol": "MOEX:IMOEX",
+"interval": "D",
+"timezone": "Europe/Moscow",
+"theme": "dark",
+"style": "1",
+"locale": "ru",
+"toolbar_bg": "#f1f3f6",
+"enable_publishing": false,
+"hide_side_toolbar": false,
+"allow_symbol_change": true,
+"container_id": "tradingview_chart"
+});
 };
-
 function showTab(t) {
-  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  event.currentTarget.classList.add('active');
-  document.getElementById(t + '-tab').classList.add('active');
+document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+const targetTab = document.querySelector(`.tab[onclick*="${t}"]`);
+if(targetTab) targetTab.classList.add('active');
+document.getElementById(t + '-tab').classList.add('active');
 }
-
 function analyze(s) {
-  showTab('chat');
-  quickAsk(`Проведи полный технический и фундаментальный анализ ${s} на MOEX. Укажи уровни поддержки, сопротивления и прогноз на 2026 год.`);
+showTab('chat');
+quickAsk(`Проведи полный технический и фундаментальный анализ актива ${s} на MOEX. Укажи уровни поддержки, сопротивления, ГО (если это фьючерс) и сценарии long/short.`);
 }
-
 function quickAsk(q) {
-  document.getElementById('userMessage').value = q;
-  sendMessage();
+document.getElementById('userMessage').value = q;
+sendMessage();
 }
-
 async function sendMessage() {
-  const msg = document.getElementById('userMessage').value.trim();
-  if(!msg) return;
-  const key = getKey();
-  if(!key) return alert('Нужен API ключ Groq!');
-
-  const container = document.getElementById('chatMessages');
-  container.innerHTML += `<div class="message user">${msg}</div>`;
-  document.getElementById('userMessage').value = '';
-  container.scrollTop = container.scrollHeight;
-
-  const aiMsgId = 'ai-' + Date.now();
-  container.innerHTML += `<div class="message ai" id="${aiMsgId}">Думаю...</div>`;
-  container.scrollTop = container.scrollHeight;
-
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: 'system', content: 'Ты - экспертный финансовый аналитик MOEX. Твоя задача - давать структурированные ответы по акциям и фьючерсам. Используй таблицы, списки и выделение жирным. Анализируй риски и ГО для фьючерсов.' },
-          { role: 'user', content: msg }
-        ]
-      })
-    });
-    const data = await res.json();
-    const answer = data.choices[0].message.content;
-    document.getElementById(aiMsgId).innerHTML = answer.replace(/
+const msg = document.getElementById('userMessage').value.trim();
+if(!msg) return;
+const key = getKey();
+if(!key) return alert('Нужен API ключ Groq!');
+const container = document.getElementById('chatMessages');
+container.innerHTML += `<div class="message user">${msg}</div>`;
+document.getElementById('userMessage').value = '';
+container.scrollTop = container.scrollHeight;
+const aiMsgId = 'ai-' + Date.now();
+container.innerHTML += `<div class="message ai" id="${aiMsgId}">Думаю...</div>`;
+container.scrollTop = container.scrollHeight;
+try {
+const res = await fetch(API_URL, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+body: JSON.stringify({
+model: MODEL,
+messages: [
+{ role: 'system', content: 'Ты - экспертный финансовый аналитик MOEX. Твоя задача - давать профессиональные структурированные ответы. Используй таблицы для сравнения параметров (цена, ГО, волатильность). Анализируй риски и сценарии long/short. Отвечай на русском языке.' },
+{ role: 'user', content: msg }
+]
+})
+});
+const data = await res.json();
+const answer = data.choices[0].message.content;
+document.getElementById(aiMsgId).innerHTML = answer.replace(/
 /g, '<br>');
-  } catch (e) {
-    document.getElementById(aiMsgId).innerHTML = 'Ошибка: ' + e.message;
-  }
-  container.scrollTop = container.scrollHeight;
+} catch (e) {
+document.getElementById(aiMsgId).innerHTML = 'Ошибка: ' + e.message;
+}
+container.scrollTop = container.scrollHeight;
 }
 </script>
 </body>
