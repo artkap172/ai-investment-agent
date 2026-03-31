@@ -159,10 +159,6 @@ body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3;
       <button class="quick-btn" onclick="quickAsk('Какие риски есть на срочном и фондовом рынке РФ в 2026 году: волатильность, ликвидность, валютный риск, маржин-колл, экспирация')"> ⚠️ Риски рынка Pro</button>
       <button class="quick-btn" onclick="quickAsk('Сравни ОФЗ, корпоративные облигации, акции и фьючерсы для российского инвестора: доходность, волатильность, ликвидность и риск')"> 💰 Акции, ОФЗ и фьючерсы</button>
       <button class="quick-btn" onclick="quickAsk('Объясни с нуля как устроены фьючерсы на Московской бирже: ГО, экспирация, плечо, риски, базовый актив, примеры')"> 📡 Фьючерсы с нуля</button>
-      <button class="quick-btn" onclick="quickAsk('Создай диверсифицированный портфель для российского инвес႐ора на 500 000 рублей')"> 🌍 Портфель 500к</button>
-      <button class="quick-btn" onclick="quickAsk('Какие риски есть на российском фондовом рынке в 2026 году?')"> ⚠️ Риски рынка</button>
-      <button class="quick-btn" onclick="quickAsk('Сравни ОФЗ, корпоративные облигации и акции для российского инвестора')"> 💰 Акции вс ОФЗ</button>
-      <button class="quick-btn" onclick="quickAsk('Дай пошаговый план: как начать инвестировать на МОСБИРЖе с нуля')"> 📡 С нуля в инвестиции</button>
     </div>
     <div class="sidebar-section">
       <h3>ℹ️ О проекте</h3>
@@ -207,17 +203,6 @@ body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3;
           <div class="analysis-item"><h4>Инструменты</h4><p>Сравнение акций, облигаций и фьючерсов по ожидаемой идее, горизонту и нагрузке на капитал.</p></div>
         </div>
       </div>
-      <div class="card">
-        <h3>🔥 Популярные направления</h3>
-        <div>
-          <span class="market-chip">Индекс Мосбиржи</span>
-          <span class="market-chip">Нефтегаз</span>
-          <span class="market-chip">Банки</span>
-          <span class="market-chip">Металлы</span>
-          <span class="market-chip">ОФЗ</span>
-          <span class="market-chip">Срочный рынок</span>
-        </div>
-      </div>
     </div>
 
     <div class="tab-content" id="futures-tab">
@@ -239,21 +224,6 @@ body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3;
           <div class="analysis-item"><h4>Сценарий</h4><p>Идея long или short, ключевые уровни, условия отмены сценария и перенос позиции через экспирацию.</p></div>
           <div class="analysis-item"><h4>Сравнение</h4><p>Отличие фьючерса от базового актива: капитал, риск, удержание, дивиденды, влияние курса и ставок.</p></div>
         </div>
-      </div>
-      <div class="card">
-        <h3>⚡ Быстрый старт по контрактам</h3>
-        <div class="futures-grid">
-          <div class="futures-card"><strong>MXI — индекс Мосбиржи</strong><span>Для направленного взгляда на широкий рынок и общего риск-аппетита.</span></div>
-          <div class="futures-card"><strong>Si — USD/RUB</strong><span>Для валютного хеджа, сценариев по рублю и внешним шокам.</span></div>
-          <div class="futures-card"><strong>BR — нефть Brent</strong><span>Для сырьевого сценария и чувствительности российского рынка к нефти.</span></div>
-          <div class="futures-card"><strong>GD — золото</strong><span>Для защитных сценариев и глобальной неопределенности.</span></div>
-          <div class="futures-card"><strong>SBRF</strong><span>Фьючерс на акции Сбербанка для активной торговли и спекулятивных идей.</span></div>
-          <div class="futures-card"><strong>GAZR</strong><span>Фьючерс на акции Газпрома для сценариев в энергетике и дивидендной повестке.</span></div>
-        </div>
-      </div>
-      <div class="card">
-        <h3>⌨️ Шаблон профессионального запроса</h3>
-        <div class="msg-bubble">Сделай анализ фьючерса <span class="tag">Si</span> на MOEX: базовый актив, ближайшая экспирация, ликвидность, волатильность, ГО, ключевые уровни, сценарий long/short, риски удержания позиции и сравнение с базовым активом.</div>
       </div>
     </div>
 
@@ -330,13 +300,7 @@ function quickAsk(q) {
 function activateTabByName(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  const tabMap = {
-    chat: 0,
-    market: 1,
-    futures: 2,
-    portfolio: 3,
-    news: 4
-  };
+  const tabMap = { chat: 0, market: 1, futures: 2, portfolio: 3, news: 4 };
   const tabs = document.querySelectorAll('.tab');
   if (tabs[tabMap[name]]) tabs[tabMap[name]].classList.add('active');
   const panel = document.getElementById(name + '-tab');
@@ -374,56 +338,21 @@ async function sendMessage() {
   if (!key) return alert('⚠️ Сначала введите Groq API ключ слева!');
 
   const msgContainer = document.getElementById('chatMessages');
-  msgContainer.innerHTML += `
-    <div class="message user">
-      <div class="msg-avatar user">👤</div>
-      <div class="msg-bubble">${msg}</div>
-    </div>
-  `;
+  msgContainer.innerHTML += `<div class="message user"><div class="msg-avatar user">👤</div><div class="msg-bubble">${msg}</div></div>`;
   document.getElementById('userMessage').value = '';
   msgContainer.scrollTop = msgContainer.scrollHeight;
 
-  msgContainer.innerHTML += `
-    <div class="message ai" id="aiLoading">
-      <div class="msg-avatar ai">🤖</div>
-      <div class="msg-bubble"><div class="loader"></div> Анализирую...</div>
-    </div>
-  `;
+  msgContainer.innerHTML += `<div class="message ai" id="aiLoading"><div class="msg-avatar ai">🤖</div><div class="msg-bubble"><div class="loader"></div> Анализирую...</div></div>`;
   msgContainer.scrollTop = msgContainer.scrollHeight;
 
   try {
-    const systemPrompt = `Ты экспертный финансовый аналитик и инвестиционный консультант, специализирующийся на российском фондовом и срочном рынке (МОСБИРЖ).
-Твои ответы должны быть:
-- Конкретными и практическими
-- Структурированными
-- С анализом рисков и возможностей
-- С учетом акций, ОФЗ, облигаций и фьючерсов
-- С обязательным пояснением по рискам, ГО, ликвидности и горизонту сделки
-
-Если вопрос про фьючерсы, анализируй:
-- базовый актив
-- ликвидность
-- волатильность
-- гарантийное обеспечение
-- риск плеча
-- экспирацию
-- сценарии long/short
-- отличие от базового актива
-
-Используй эмодзи умеренно и по делу. Не давай безусловных финансовых советов без предупреждения о рисках.`;
-
+    const systemPrompt = "Ты экспертный финансовый аналитик МОСБИРЖ. Анализируй акции и фьючерсы (ГО, ликвидность, экспирация, риск).";
     const res = await fetch(API_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${key}`
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
       body: JSON.stringify({
         model: MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: msg }
-        ],
+        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: msg }],
         temperature: 0.7,
         max_tokens: 2048
       })
@@ -434,22 +363,12 @@ async function sendMessage() {
     const answer = data.choices[0].message.content;
 
     document.getElementById('aiLoading').remove();
-    msgContainer.innerHTML += `
-      <div class="message ai">
-        <div class="msg-avatar ai">🤖</div>
-        <div class="msg-bubble">${answer.replace(/\n/g, '<br>')}</div>
-      </div>
-    `;
+    msgContainer.innerHTML += `<div class="message ai"><div class="msg-avatar ai">🤖</div><div class="msg-bubble">${answer.replace(/
+/g, '<br>')}</div></div>`;
   } catch (error) {
     document.getElementById('aiLoading').remove();
-    msgContainer.innerHTML += `
-      <div class="message ai">
-        <div class="msg-avatar ai">❌</div>
-        <div class="msg-bubble">⚠️ <strong>Ошибка:</strong> ${error.message}<br>Проверьте API ключ или попробуйте позже.</div>
-      </div>
-    `;
+    msgContainer.innerHTML += `<div class="message ai"><div class="msg-avatar ai">❌</div><div class="msg-bubble">⚠️ Ошибка: ${error.message}</div></div>`;
   }
-
   msgContainer.scrollTop = msgContainer.scrollHeight;
 }
 </script>
