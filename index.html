@@ -1,237 +1,284 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Investment Agent Pro — Профессиональный AI-ассистент по рынку MOEX</title>
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; display: flex; flex-direction: column; }
-.ticker-tape { height: 40px; border-bottom: 1px solid #21262d; background: #161b22; }
-.header { background: linear-gradient(135deg, #1a1f2e 0%, #162032 100%); border-bottom: 1px solid #21262d; padding: 12px 24px; display: flex; align-items: center; gap: 12px; }
-.header h1 { font-size: 18px; font-weight: 700; background: linear-gradient(90deg, #58a6ff, #3fb950); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.badge { background: #238636; color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
-.layout { display: grid; grid-template-columns: 300px 1fr; flex: 1; overflow: hidden; }
-.sidebar { background: #11161d; border-right: 1px solid #21262d; display: flex; flex-direction: column; overflow-y: auto; padding: 16px; }
-.sidebar h3 { font-size: 11px; text-transform: uppercase; color: #8b949e; margin: 16px 0 8px; letter-spacing: 0.5px; }
-.api-input { width: 100%; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 8px; color: #e6edf3; font-size: 12px; margin-bottom: 8px; }
-.btn { width: 100%; padding: 8px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.2s; }
-.btn-primary { background: #238636; color: #fff; }
-.btn-secondary { background: #21262d; color: #cdd9e5; border: 1px solid #30363d; margin-top: 4px; }
-.ticker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-.ticker-btn { padding: 6px; background: #21262d; border: 1px solid #30363d; border-radius: 4px; color: #e6edf3; font-size: 11px; cursor: pointer; }
-.quick-btn { background: none; border: 1px solid #30363d; color: #8b949e; text-align: left; padding: 6px; font-size: 11px; border-radius: 4px; cursor: pointer; margin-bottom: 4px; width: 100%; }
-.main { display: flex; flex-direction: column; background: #0d1117; }
-.tabs { display: flex; background: #161b22; border-bottom: 1px solid #21262d; padding: 0 20px; }
-.tab { padding: 12px 16px; font-size: 13px; cursor: pointer; color: #8b949e; border-bottom: 2px solid transparent; }
-.tab.active { color: #e6edf3; border-bottom-color: #58a6ff; }
-.tab-content { display: none; flex: 1; overflow-y: auto; padding: 20px; }
-.tab-content.active { display: block; }
-.chat-messages { height: calc(100vh - 250px); overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; padding-right: 8px; }
-.message { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.5; }
-.message.user { align-self: flex-end; background: #1f3a5f; border: 1px solid #1f6feb; }
-.message.ai { align-self: flex-start; background: #161b22; border: 1px solid #21262d; }
-.chat-input-area { display: flex; gap: 8px; background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 12px; }
-.chat-input { flex: 1; background: none; border: none; color: #e6edf3; font-size: 14px; outline: none; resize: none; }
-.send-btn { background: #1f6feb; border: none; border-radius: 6px; color: #fff; width: 36px; height: 36px; cursor: pointer; }
-.card { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
-.widget-container { height: 400px; background: #161b22; border-radius: 8px; border: 1px solid #21262d; overflow: hidden; margin-top: 10px; }
-.footer { padding: 6px 20px; background: #161b22; border-top: 1px solid #21262d; font-size: 10px; color: #8b949e; display: flex; justify-content: space-between; }
-.futures-alert { background: #1f2937; border-left: 4px solid #f59e0b; padding: 12px; margin-bottom: 16px; border-radius: 4px; }
-.futures-alert strong { color: #f59e0b; }
-.futures-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
-.futures-card { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 16px; }
-.futures-card h3 { color: #58a6ff; margin-bottom: 8px; font-size: 14px; }
-.futures-card p { font-size: 12px; line-height: 1.4; color: #8b949e; margin-bottom: 8px; }
-.info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0; }
-.info-box { background: #1f2937; padding: 12px; border-radius: 8px; text-align: center; }
-.info-box h4 { font-size: 11px; text-transform: uppercase; color: #8b949e; margin-bottom: 4px; }
-.info-box .value { font-size: 16px; font-weight: 700; color: #58a6ff; }
-.prompt-template { background: #1f2937; border: 1px solid #30363d; padding: 16px; border-radius: 8px; margin-top: 16px; }
-.prompt-template h3 { color: #58a6ff; margin-bottom: 12px; font-size: 14px; }
-.prompt-template textarea { width: 100%; min-height: 120px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; color: #e6edf3; font-size: 13px; line-height: 1.6; font-family: inherit; resize: vertical; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Investment Agent Pro — Профессиональный AI-ассистент по рынку MOEX</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; display: flex; flex-direction: column; }
+        .ticker-tape { height: 40px; border-bottom: 1px solid #21262d; background: #161b22; overflow: hidden; }
+        .header { background: linear-gradient(135deg, #1a1f2e 0%, #162032 100%); border-bottom: 1px solid #21262d; padding: 12px 24px; display: flex; align-items: center; gap: 12px; }
+        .header h1 { font-size: 18px; font-weight: 700; background: linear-gradient(90deg, #58a6ff, #3fb950); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .badge { background: #238636; color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+        .layout { display: grid; grid-template-columns: 300px 1fr; flex: 1; overflow: hidden; }
+        .sidebar { background: #11161d; border-right: 1px solid #21262d; display: flex; flex-direction: column; overflow-y: auto; padding: 16px; }
+        .sidebar h3 { font-size: 11px; text-transform: uppercase; color: #8b949e; margin: 16px 0 8px; letter-spacing: 0.5px; }
+        .api-input { width: 100%; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 8px; color: #e6edf3; font-size: 12px; margin-bottom: 8px; }
+        .btn { width: 100%; padding: 8px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.2s; }
+        .btn-primary { background: #238636; color: #fff; }
+        .btn-secondary { background: #21262d; color: #cdd9e5; border: 1px solid #30363d; margin-top: 4px; }
+        .ticker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+        .ticker-btn { padding: 6px; background: #21262d; border: 1px solid #30363d; border-radius: 4px; color: #e6edf3; font-size: 11px; cursor: pointer; text-align: center; }
+        .quick-btn { background: none; border: 1px solid #30363d; color: #8b949e; text-align: left; padding: 6px; font-size: 11px; border-radius: 4px; cursor: pointer; margin-bottom: 4px; width: 100%; }
+        .main { display: flex; flex-direction: column; background: #0d1117; overflow: hidden; }
+        .tabs { display: flex; background: #161b22; border-bottom: 1px solid #21262d; padding: 0 20px; }
+        .tab { padding: 12px 16px; font-size: 13px; cursor: pointer; color: #8b949e; border-bottom: 2px solid transparent; }
+        .tab.active { color: #e6edf3; border-bottom-color: #58a6ff; }
+        .tab-content { display: none; flex: 1; overflow-y: auto; padding: 20px; }
+        .tab-content.active { display: block; height: 100%; }
+        .chat-container { display: flex; flex-direction: column; height: calc(100vh - 160px); }
+        .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-bottom: 16px; padding-right: 8px; }
+        .message { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+        .message.user { align-self: flex-end; background: #1f3a5f; border: 1px solid #1f6feb; }
+        .message.ai { align-self: flex-start; background: #161b22; border: 1px solid #21262d; }
+        .chat-input-area { display: flex; gap: 8px; background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 12px; }
+        .chat-input { flex: 1; background: none; border: none; color: #e6edf3; font-size: 14px; outline: none; resize: none; min-height: 24px; max-height: 200px; }
+        .send-btn { background: #1f6feb; border: none; border-radius: 6px; color: #fff; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .widget-container { height: calc(100vh - 200px); background: #161b22; border-radius: 8px; border: 1px solid #21262d; overflow: hidden; margin-top: 10px; }
+        .footer { padding: 6px 20px; background: #161b22; border-top: 1px solid #21262d; font-size: 10px; color: #8b949e; display: flex; justify-content: space-between; }
+        .futures-alert { background: #1f2937; border-left: 4px solid #f59e0b; padding: 12px; margin-bottom: 16px; border-radius: 4px; }
+        .futures-alert strong { color: #f59e0b; }
+        .futures-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .futures-card { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 16px; }
+        .futures-card h3 { color: #58a6ff; margin-bottom: 8px; font-size: 14px; }
+        .futures-card p { font-size: 12px; line-height: 1.4; color: #8b949e; margin-bottom: 12px; }
+        .prompt-template { background: #1f2937; border: 1px solid #30363d; padding: 16px; border-radius: 8px; margin-top: 16px; }
+        .prompt-template h3 { color: #58a6ff; margin-bottom: 12px; font-size: 14px; }
+        .prompt-template textarea { width: 100%; min-height: 100px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; color: #e6edf3; font-size: 13px; line-height: 1.6; font-family: inherit; resize: vertical; margin-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+        th, td { border: 1px solid #30363d; padding: 8px; text-align: left; }
+        th { background: #161b22; color: #8b949e; }
+    </style>
 </head>
-<body><div class="ticker-tape">
-<div class="tradingview-widget-container">
-<div class="tradingview-widget-container__widget"></div>
-<script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-{
-"symbols": [
-{"proName": "MOEX:IMOEX", "title": "Индекс Мосбиржи"},
-{"proName": "MOEX:SBER", "title": "Сбербанк"},
-{"proName": "MOEX:GAZP", "title": "Газпром"},
-{"proName": "MOEX:LKOH", "title": "Лукойл"},
-{"proName": "FX_IDC:USDRUB", "title": "USD/RUB"}
-],
-"showSymbolLogo": true,
-"colorTheme": "dark",
-"isTransparent": true,
-"displayMode": "adaptive",
-"locale": "ru"
-}
-</script>
-</div>
-</div>
-<div class="header">
-<h1>AI Investment Agent Pro</h1>
-<span class="badge">PRO</span>
-<span style="margin-left:auto; font-size:11px; color:#8b949e;">Powered by Groq Llama 3.3</span>
-</div>
-<div class="layout">
-<aside class="sidebar">
-<h3>⚙️ Настройки</h3>
-<input class="api-input" id="apiKey" type="password" placeholder="Groq API Key">
-<button class="btn btn-primary" onclick="saveKey()">Сохранить</button>
-<h3>📊 Акции MOEX</h3>
-<div class="ticker-grid">
-<button class="ticker-btn" onclick="analyze('SBER')">SBER</button>
-<button class="ticker-btn" onclick="analyze('GAZP')">GAZP</button>
-<button class="ticker-btn" onclick="analyze('LKOH')">LKOH</button>
-<button class="ticker-btn" onclick="analyze('ROSN')">ROSN</button>
-<button class="ticker-btn" onclick="analyze('YNDX')">YNDX</button>
-<button class="ticker-btn" onclick="analyze('MGNT')">MGNT</button>
-</div>
-<h3>📉 Фьючерсы MOEX</h3>
-<div class="ticker-grid">
-<button class="ticker-btn" onclick="analyze('MXI')">MXI</button>
-<button class="ticker-btn" onclick="analyze('Si')">Si</button>
-<button class="ticker-btn" onclick="analyze('BR')">BR</button>
-<button class="ticker-btn" onclick="analyze('GD')">GD</button>
-<button class="ticker-btn" onclick="analyze('SBRF')">SBRF</button>
-<button class="ticker-btn" onclick="analyze('GAZR')">GAZR</button>
-</div>
-<h3>⚡ Быстрые запросы</h3>
-<button class="quick-btn" onclick="quickAsk('Проведи обзор рынка МОСБИРЖИ на сегодня.')">📈 Обзор рынка</button>
-<button class="quick-btn" onclick="quickAsk('Какие главные риски для рынка акций РФ в 2026 году?')">⚠️ Риски 2026</button>
-<button class="quick-btn" onclick="quickAsk('Сравни доходность и риски акций и фьючерсов на текущем рынке.')">⚖️ Акции vs Фьючерсы</button>
-<button class="quick-btn" onclick="quickAsk('Сделай обзор ликвидных фьючерсов на MOEX (MXI, Si, BR).')">📉 Обзор фьючерсов</button>
-<button class="quick-btn" onclick="quickAsk('Анализ фьючерса vs базового актива (напр. SBER vs SBRF).')">📊 Фьючерс vs Базис</button>
-</aside>
-<main class="main">
-<div class="tabs">
-<div class="tab active" onclick="showTab('chat')">💬 Чат</div>
-<div class="tab" onclick="showTab('charts')">📈 Графики</div>
-<div class="tab" onclick="showTab('futures')">📉 Фьючерсы</div>
-</div>
-<div id="chat-tab" class="tab-content active">
-<div class="chat-messages" id="chatMessages">
-<div class="message ai">
-Добро пожаловать в <strong>Investment Agent Pro</strong>. Анализируйте акции, облигации и фьючерсы Московской биржи в одном интерфейсе.
-</div>
-</div>
-<div class="chat-input-area">
-<textarea class="chat-input" id="userMessage" placeholder="Спросите про акции, ОФЗ или фьючерсы MOEX..."></textarea>
-<button class="send-btn" onclick="sendMessage()">➤</button>
-</div>
-</div>
-<div id="charts-tab" class="tab-content">
-<div class="card">
-<h3>График Индекса Мосбиржи</h3>
-<div class="widget-container" id="tradingview_chart"></div>
-</div>
-</div>
-<div id="futures-tab" class="tab-content">
-<div class="futures-alert">
-<strong>Срочный рынок:</strong> фьючерсы несут повышенный риск из-за плеча, вариационной маржи, гарантийного обеспечения и даты экспирации.
-</div>
-<div class="futures-grid">
-<div class="futures-card"><h3>MXI — индекс Мосбиржи</h3><p>Для направленного взгляда на широкий рынок и общего риск-аппетита.</p></div>
-<div class="futures-card"><h3>Si — USD/RUB</h3><p>Для валютного хеджа, сценариев по рублю и внешним шокам.</p></div>
-<div class="futures-card"><h3>BR — нефть Brent</h3><p>Для сырьевых сценариев и чувствительности российского рынка к нефти.</p></div>
-<div class="futures-card"><h3>GD — золото</h3><p>Для защитных сценариев и глобальной неопределенности.</p></div>
-</div>
-<div class="prompt-template">
-<h3>📋 Шаблон профессионального запроса</h3>
-<textarea id="futuresPrompt">Сделай анализ фьючерса [Тикер] на MOEX: базовый актив, ближайшая экспирация, ликвидность, волатильность, ГО, ключевые уровни, сценарий long/short, риски удержания позиции и сравнение с базовым активом.</textarea>
-<button class="btn btn-secondary" onclick="quickAsk(document.getElementById('futuresPrompt').value)" style="margin-top:10px">Использовать шаблон</button>
-</div>
-</div>
-</main>
-</div>
-<footer class="footer">
-<span>© 2026 Investment Agent Pro</span>
-<span>System Ready · MOEX Connected</span>
-</footer>
-<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-<script>
-const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = 'llama-3.3-70b-versatile';
-function getKey() { return localStorage.getItem('groqApiKey') || ''; }
-function saveKey() {
-const k = document.getElementById('apiKey').value.trim();
-if(!k) return alert('Введите ключ');
-localStorage.setItem('groqApiKey', k);
-alert('Ключ сохранен');
-}
-window.onload = () => {
-document.getElementById('apiKey').value = getKey();
-document.getElementById('userMessage').addEventListener('keydown', e => {
-if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-});
-new TradingView.widget({
-"autosize": true,
-"symbol": "MOEX:IMOEX",
-"interval": "D",
-"timezone": "Europe/Moscow",
-"theme": "dark",
-"style": "1",
-"locale": "ru",
-"toolbar_bg": "#f1f3f6",
-"enable_publishing": false,
-"hide_side_toolbar": false,
-"allow_symbol_change": true,
-"container_id": "tradingview_chart"
-});
-};
-function showTab(t) {
-document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-const targetTab = document.querySelector(`.tab[onclick*="${t}"]`);
-if(targetTab) targetTab.classList.add('active');
-document.getElementById(t + '-tab').classList.add('active');
-}
-function analyze(s) {
-showTab('chat');
-quickAsk(`Проведи полный технический и фундаментальный анализ актива ${s} на MOEX. Укажи уровни поддержки, сопротивления, ГО (если это фьючерс) и сценарии long/short.`);
-}
-function quickAsk(q) {
-document.getElementById('userMessage').value = q;
-sendMessage();
-}
-async function sendMessage() {
-const msg = document.getElementById('userMessage').value.trim();
-if(!msg) return;
-const key = getKey();
-if(!key) return alert('Нужен API ключ Groq!');
-const container = document.getElementById('chatMessages');
-container.innerHTML += `<div class="message user">${msg}</div>`;
-document.getElementById('userMessage').value = '';
-container.scrollTop = container.scrollHeight;
-const aiMsgId = 'ai-' + Date.now();
-container.innerHTML += `<div class="message ai" id="${aiMsgId}">Думаю...</div>`;
-container.scrollTop = container.scrollHeight;
-try {
-const res = await fetch(API_URL, {
-method: 'POST',
-headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-body: JSON.stringify({
-model: MODEL,
-messages: [
-{ role: 'system', content: 'Ты - экспертный финансовый аналитик MOEX. Твоя задача - давать профессиональные структурированные ответы. Используй таблицы для сравнения параметров (цена, ГО, волатильность). Анализируй риски и сценарии long/short. Отвечай на русском языке.' },
-{ role: 'user', content: msg }
-]
-})
-});
-const data = await res.json();
-const answer = data.choices[0].message.content;
-document.getElementById(aiMsgId).innerHTML = answer.replace(/
+<body>
+    <div class="ticker-tape" id="ticker-tape"></div>
+
+    <div class="header">
+        <h1>AI Investment Agent Pro</h1>
+        <span class="badge">PRO</span>
+        <span style="margin-left:auto; font-size:11px; color:#8b949e;">Powered by Groq Llama 3.3</span>
+    </div>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>⚙️ Настройки</h3>
+            <input class="api-input" id="apiKey" type="password" placeholder="Groq API Key">
+            <button class="btn btn-primary" onclick="saveKey()">Сохранить</button>
+
+            <h3>📊 Акции MOEX</h3>
+            <div class="ticker-grid">
+                <button class="ticker-btn" onclick="analyze('SBER')">SBER</button>
+                <button class="ticker-btn" onclick="analyze('GAZP')">GAZP</button>
+                <button class="ticker-btn" onclick="analyze('LKOH')">LKOH</button>
+                <button class="ticker-btn" onclick="analyze('ROSN')">ROSN</button>
+                <button class="ticker-btn" onclick="analyze('YNDX')">YNDX</button>
+                <button class="ticker-btn" onclick="analyze('MGNT')">MGNT</button>
+            </div>
+
+            <h3>📉 Фьючерсы MOEX</h3>
+            <div class="ticker-grid">
+                <button class="ticker-btn" onclick="analyze('MXI')">MXI</button>
+                <button class="ticker-btn" onclick="analyze('Si')">Si</button>
+                <button class="ticker-btn" onclick="analyze('BR')">BR</button>
+                <button class="ticker-btn" onclick="analyze('GD')">GD</button>
+                <button class="ticker-btn" onclick="analyze('SBRF')">SBRF</button>
+                <button class="ticker-btn" onclick="analyze('GAZR')">GAZR</button>
+            </div>
+
+            <h3>⚡ Быстрые запросы</h3>
+            <button class="quick-btn" onclick="quickAsk('Сделай обзор текущей ситуации на рынке акций MOEX. Какие лидеры и аутсайдеры?')">📈 Обзор рынка</button>
+            <button class="quick-btn" onclick="quickAsk('Проанализируй основные риски для российского рынка на 2026 год.')">⚠️ Риски 2026</button>
+            <button class="quick-btn" onclick="quickAsk('Сравни эффективность инвестирования в акции против фьючерсов в текущих условиях.')">⚖️ Акции vs Фьючерсы</button>
+            <button class="quick-btn" onclick="quickAsk('Дай краткий обзор самых ликвидных фьючерсов на MOEX сегодня.')">📉 Обзор фьючерсов</button>
+            <button class="quick-btn" onclick="quickAsk('Объясни текущий базис (contango/backwardation) в фьючерсах на индекс Мосбиржи.')">📊 Фьючерс vs Базис</button>
+        </aside>
+
+        <main class="main">
+            <div class="tabs">
+                <div class="tab active" onclick="showTab('chat')">💬 Чат</div>
+                <div class="tab" onclick="showTab('charts')">📈 Графики</div>
+                <div class="tab" onclick="showTab('futures')">📉 Фьючерсы</div>
+            </div>
+
+            <div id="chat-tab" class="tab-content active">
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message ai">Добро пожаловать в **Investment Agent Pro**. Я ваш профессиональный ассистент по анализу инструментов Московской биржи. С чего начнем?</div>
+                    </div>
+                    <div class="chat-input-area">
+                        <textarea class="chat-input" id="userMessage" placeholder="Спросите про акции, ГО или фьючерсы MOEX..." rows="1"></textarea>
+                        <button class="send-btn" onclick="sendMessage()">➤</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="charts-tab" class="tab-content">
+                <div class="widget-container" id="tradingview_chart"></div>
+            </div>
+
+            <div id="futures-tab" class="tab-content">
+                <div class="futures-alert">
+                    <strong>Срочный рынок:</strong> Торговля фьючерсами сопряжена с высоким риском. Обращайте внимание на <strong>Гарантийное обеспечение (ГО)</strong>, вариационную маржу и дату экспирации.
+                </div>
+                <div class="futures-grid">
+                    <div class="futures-card">
+                        <h3>MXI (Фьючерс на индекс Мосбиржи)</h3>
+                        <p>Основной инструмент для хеджирования портфеля акций и спекуляций на общую динамику рынка.</p>
+                        <button class="btn btn-secondary" onclick="analyze('MXI')">Анализ MXI</button>
+                    </div>
+                    <div class="futures-card">
+                        <h3>Si (Фьючерс на пару USD/RUB)</h3>
+                        <p>Инструмент для страхования валютных рисков и торговли волатильностью рубля.</p>
+                        <button class="btn btn-secondary" onclick="analyze('Si')">Анализ Si</button>
+                    </div>
+                    <div class="futures-card">
+                        <h3>BR (Фьючерс на нефть Brent)</h3>
+                        <p>Ключевой товарный фьючерс, влияющий на котировки российских нефтегазовых компаний.</p>
+                        <button class="btn btn-secondary" onclick="analyze('BR')">Анализ BR</button>
+                    </div>
+                </div>
+
+                <div class="prompt-template">
+                    <h3>📋 Профессиональный анализ фьючерса</h3>
+                    <textarea id="futuresPrompt">Проведи глубокий анализ фьючерса [Тикер] на MOEX. Обязательно разбери: базовый актив, дату экспирации, текущее ГО, ликвидность стакана, волатильность и сценарии Long/Short с указанием уровней стоп-лосса.</textarea>
+                    <button class="btn btn-primary" onclick="useTemplate()">Использовать шаблон</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div>© 2026 Investment Agent Pro</div>
+        <div>System Online · MOEX Real-time Ready</div>
+    </footer>
+
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+    {
+        "symbols": [
+            {"proName": "MOEX:IMOEX", "title": "Индекс Мосбиржи"},
+            {"proName": "MOEX:SBER", "title": "Сбербанк"},
+            {"proName": "MOEX:GAZP", "title": "Газпром"},
+            {"proName": "MOEX:LKOH", "title": "Лукойл"},
+            {"proName": "FX_IDC:USDRUB", "title": "USD/RUB"}
+        ],
+        "showSymbolLogo": true, "colorTheme": "dark", "isTransparent": true, "displayMode": "adaptive", "locale": "ru"
+    }
+    </script>
+
+    <script>
+        const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+        const MODEL = 'llama-3.3-70b-versatile';
+
+        function getKey() { return localStorage.getItem('groqApiKey') || ''; }
+        function saveKey() {
+            const k = document.getElementById('apiKey').value.trim();
+            if(!k) return alert('Введите ключ');
+            localStorage.setItem('groqApiKey', k);
+            alert('Ключ сохранен');
+        }
+
+        window.onload = () => {
+            document.getElementById('apiKey').value = getKey();
+            document.getElementById('userMessage').addEventListener('keydown', e => {
+                if(e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            initTradingView('MOEX:IMOEX');
+        };
+
+        function initTradingView(symbol) {
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": symbol,
+                "interval": "D",
+                "timezone": "Europe/Moscow",
+                "theme": "dark",
+                "style": "1",
+                "locale": "ru",
+                "toolbar_bg": "#f1f3f6",
+                "enable_publishing": false,
+                "allow_symbol_change": true,
+                "container_id": "tradingview_chart"
+            });
+        }
+
+        function showTab(t) {
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            const targetTab = document.querySelector(`.tab[onclick*="${t}"]`);
+            if(targetTab) targetTab.classList.add('active');
+            document.getElementById(t + '-tab').classList.add('active');
+        }
+
+        function analyze(s) {
+            showTab('chat');
+            const prompt = s.length <= 4 ? 
+                `Проведи профессиональный технический и фундаментальный анализ актива ${s} на MOEX. Укажи ключевые уровни, тренд, риски и сценарий long/short.` : 
+                `Проведи анализ фьючерса ${s}: базовый актив, экспирация, ГО, ликвидность и торговый план.`;
+            quickAsk(prompt);
+            initTradingView('MOEX:' + s);
+        }
+
+        function quickAsk(q) {
+            document.getElementById('userMessage').value = q;
+            sendMessage();
+        }
+
+        function useTemplate() {
+            const t = document.getElementById('futuresPrompt').value;
+            quickAsk(t);
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('userMessage');
+            const msg = input.value.trim();
+            if(!msg) return;
+
+            const key = getKey();
+            if(!key) return alert('Требуется API ключ Groq в настройках!');
+
+            const container = document.getElementById('chatMessages');
+            container.innerHTML += `<div class="message user">${msg}</div>`;
+            input.value = '';
+            container.scrollTop = container.scrollHeight;
+
+            const aiMsgId = 'ai-' + Date.now();
+            container.innerHTML += `<div class="message ai" id="${aiMsgId}">Анализирую данные рынка...</div>`;
+            container.scrollTop = container.scrollHeight;
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
+                    body: JSON.stringify({
+                        model: MODEL,
+                        messages: [
+                            { role: 'system', content: 'Ты - элитный финансовый аналитик, эксперт по рынку MOEX. Твои ответы должны быть глубокими, структурированными и профессиональными. Используй финансовую терминологию (ГО, вариационка, экспирация, мультипликаторы). Всегда давай конкретные уровни и сценарии. Отвечай на русском языке. Используй Markdown для форматирования.' },
+                            { role: 'user', content: msg }
+                        ]
+                    })
+                });
+
+                const data = await res.json();
+                if(data.error) throw new Error(data.error.message);
+                
+                let answer = data.choices[0].message.content;
+                // Simple markdown-to-html conversion for common elements
+                answer = answer.replace(/
 /g, '<br>');
-} catch (e) {
-document.getElementById(aiMsgId).innerHTML = 'Ошибка: ' + e.message;
-}
-container.scrollTop = container.scrollHeight;
-}
-</script>
+                document.getElementById(aiMsgId).innerHTML = answer;
+            } catch (e) {
+                document.getElementById(aiMsgId).innerHTML = '<span style="color:#f85149">Ошибка: ' + e.message + '</span>';
+            }
+            container.scrollTop = container.scrollHeight;
+        }
+    </script>
 </body>
 </html>
