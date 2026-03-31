@@ -38,7 +38,7 @@
         .pos { background: rgba(63,185,80,0.15); color: #3fb950; }
         .neg { background: rgba(248,81,73,0.15); color: #f85149; }
         .neu { background: rgba(139,148,158,0.15); color: #8b949e; }
-        .filter-tabs { display: flex; gap: 8px; margin-bottom: 15px; }
+        .filter-tabs { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
         .filter-btn { padding: 5px 12px; border-radius: 15px; background: #21262d; border: 1px solid #30363d; color: #8b949e; font-size: 11px; cursor: pointer; }
         .filter-btn.active { background: #58a6ff; color: #fff; border-color: #58a6ff; }
     </style>
@@ -78,36 +78,48 @@
                 </div>
                 <div class="chat-input-area">
                     <textarea id="msgInp" class="chat-input" placeholder="Задайте вопрос по акциям или фьючерсам..." rows="1"></textarea>
-                    <button class="ticker-btn" style="padding: 10px 15px; font-weight: bold;" onclick="send()">ОТПРАВИТЬ</button>
+                    <button class="btn" style="width: auto; margin-bottom: 0;" onclick="send()">ОТПРАВИТЬ</button>
                 </div>
             </div>
             <div id="futures-tab" class="tab-content">
                 <div class="filter-tabs">
                     <button class="filter-btn active" onclick="updateFutures('Все')">Все</button>
                     <button class="filter-btn" onclick="updateFutures('Акции')">Акции</button>
+                    <button class="filter-btn" onclick="updateFutures('Металлы')">Металлы</button>
+                    <button class="filter-btn" onclick="updateFutures('Энергия')">Энергия</button>
                     <button class="filter-btn" onclick="updateFutures('Индексы')">Индексы</button>
-                    <button class="filter-btn" onclick="updateFutures('Товары')">Товары</button>
+                    <button class="filter-btn" onclick="updateFutures('Валюта')">Валюта</button>
                 </div>
-                <div class="card" style="background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 15px;">
-                    <table class="portfolio-table">
-                        <thead>
-                            <tr><th>Тикер</th><th>Название</th><th>Сигнал</th><th>Цена</th><th>AI Анализ</th></tr>
-                        </thead>
-                        <tbody id="fList"></tbody>
-                    </table>
-                </div>
+                <table class="portfolio-table">
+                    <thead>
+                        <tr>
+                            <th>Тикер</th>
+                            <th>Название</th>
+                            <th>Сигнал</th>
+                            <th>Цена / Уровни</th>
+                            <th>AI Анализ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fList"></tbody>
+                </table>
             </div>
         </main>
     </div>
+
     <script>
         const FL = [
             {c:'RI', n:'Фьючерс на индекс РТС', cat:'Индексы'},
-            {c:'SBER', n:'Фьючерс на Сбербанк', cat:'Акции'},
             {c:'GAZR', n:'Фьючерс на Газпром', cat:'Акции'},
+            {c:'SBER', n:'Фьючерс на Сбербанк', cat:'Акции'},
             {c:'LKOH', n:'Фьючерс на Лукойл', cat:'Акции'},
-            {c:'GL', n:'Фьючерс на Золото', cat:'Товары'},
-            {c:'BR', n:'Фьючерс на Нефть Brent', cat:'Товары'},
-            {c:'NG', n:'Фьючерс на Природный газ', cat:'Товары'}
+            {c:'ROSN', n:'Фьючерс на Роснефть', cat:'Акции'},
+            {c:'VTBR', n:'Фьючерс на ВТБ', cat:'Акции'},
+            {c:'GOLD', n:'Фьючерс на Золото', cat:'Металлы'},
+            {c:'BRENT', n:'Фьючерс на Нефть Brent', cat:'Энергия'},
+            {c:'NG', n:'Фьючерс на Природный газ', cat:'Энергия'},
+            {c:'MX', n:'Фьючерс на индекс МосБиржи', cat:'Индексы'},
+            {c:'ED', n:'Фьючерс на EUR/USD', cat:'Валюта'},
+            {c:'CNY', n:'Фьючерс на Юань/Рубль', cat:'Валюта'}
         ];
 
         function saveKey() {
@@ -135,17 +147,23 @@
                 const sig = signals[Math.floor(Math.random()*3)];
                 const cls = sig === 'BUY' ? 'pos' : sig === 'SELL' ? 'neg' : 'neu';
                 
+                const entry = (Math.random()*5000 + 100).toFixed(2);
+                const tp = (entry * 1.05).toFixed(2);
+                const sl = (entry * 0.97).toFixed(2);
+
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td><strong>${item.c}</strong></td>
                     <td>${item.n}</td>
                     <td><span class="sentiment ${cls}">${sig}</span></td>
-                    <td>${(Math.random()*5000 + 100).toFixed(2)}</td>
+                    <td>
+                        <div style="font-size: 13px;">${entry}</div>
+                        <div style="font-size: 10px; color: #8b949e;">TP: ${tp} / SL: ${sl}</div>
+                    </td>
                     <td><button class="ticker-btn" onclick="ask('Анализ фьючерса ${item.c}')">АНАЛИЗ</button></td>
                 `;
                 body.appendChild(row);
             });
-
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.innerText === c);
             });
@@ -162,7 +180,6 @@
             
             const k = localStorage.getItem('gKey');
             if(!k) return alert('Пожалуйста, введите и сохраните API ключ слева!');
-
             const box = document.getElementById('msgs');
             box.innerHTML += `<div class="message user"><div class="msg-bubble">${m}</div></div>`;
             document.getElementById('msgInp').value = '';
@@ -191,7 +208,6 @@
                 
                 if(d.choices && d.choices[0]) {
                     const content = d.choices[0].message.content;
-                    // Robust newline replacement
                     const html = content.split('\
 ').join('<br>');
                     box.innerHTML += `<div class="message ai"><div class="msg-bubble">${html}</div></div>`;
