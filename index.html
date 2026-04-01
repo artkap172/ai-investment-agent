@@ -3,101 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Investment Agent</title>
+    <title>AI Investment Agent | MOEX</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
-        .header { background: linear-gradient(135deg, #1a1f2e 0%, #162032 100%); border-bottom: 1px solid #21262d; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
-        .header h1 { font-size: 20px; font-weight: 700; background: linear-gradient(90deg, #58a6ff, #3fb950); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .layout { display: grid; grid-template-columns: 280px 1fr; height: calc(100vh - 61px); }
-        .sidebar { background: #161b22; border-right: 1px solid #21262d; padding: 16px; overflow-y: auto; }
-        .sidebar-section { margin-bottom: 24px; }
-        .sidebar-section h3 { font-size: 11px; text-transform: uppercase; color: #8b949e; margin-bottom: 12px; }
-        .api-input { width: 100%; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 8px 10px; color: #e6edf3; font-size: 12px; margin-bottom: 8px; }
-        .btn { width: 100%; padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; margin-bottom: 5px; background: #238636; color: #fff; }
-        .ticker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 20px; }
-        .ticker-btn { padding: 6px; background: #21262d; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; font-size: 11px; cursor: pointer; transition: 0.2s; }
-        .ticker-btn:hover { background: #30363d; border-color: #58a6ff; }
-        .main { display: flex; flex-direction: column; overflow: hidden; }
-        .tabs { display: flex; background: #161b22; border-bottom: 1px solid #21262d; }
-        .tab { padding: 12px 20px; font-size: 13px; cursor: pointer; color: #8b949e; border-bottom: 2px solid transparent; }
-        .tab.active { color: #e6edf3; border-bottom-color: #58a6ff; }
-        .tab-content { display: none; flex: 1; padding: 20px; overflow-y: auto; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; line-height: 1.6; }
+        .header { background: #161b22; border-bottom: 1px solid #30363d; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .header h1 { font-size: 20px; font-weight: 700; color: #58a6ff; }
+        .layout { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 61px); }
+        .sidebar { background: #0d1117; border-right: 1px solid #30363d; padding: 20px; overflow-y: auto; }
+        .sidebar-section { margin-bottom: 30px; }
+        .sidebar-section h3 { font-size: 12px; text-transform: uppercase; color: #8b949e; margin-bottom: 12px; letter-spacing: 0.5px; }
+        .api-input { width: 100%; background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px 12px; color: #e6edf3; font-size: 13px; margin-bottom: 10px; }
+        .btn { width: 100%; padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; background: #238636; color: #fff; transition: 0.2s; }
+        .btn:hover { background: #2ea043; }
+        .ticker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .ticker-btn { padding: 8px; background: #21262d; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; font-size: 12px; cursor: pointer; text-align: center; }
+        .ticker-btn:hover { border-color: #8b949e; }
+        .main { display: flex; flex-direction: column; background: #0d1117; overflow: hidden; }
+        .tabs { display: flex; background: #161b22; border-bottom: 1px solid #30363d; padding: 0 20px; }
+        .tab { padding: 14px 20px; font-size: 14px; cursor: pointer; color: #8b949e; border-bottom: 2px solid transparent; transition: 0.2s; }
+        .tab.active { color: #58a6ff; border-bottom-color: #58a6ff; font-weight: 600; }
+        .tab-content { display: none; flex: 1; overflow-y: auto; padding: 24px; }
         .tab-content.active { display: flex; flex-direction: column; }
-        .chat-messages { flex: 1; overflow-y: auto; margin-bottom: 16px; display: flex; flex-direction: column; gap: 10px; }
-        .message { display: flex; flex-direction: column; gap: 4px; }
-        .msg-bubble { background: #161b22; border: 1px solid #21262d; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.5; max-width: 85%; word-wrap: break-word; }
-        .message.user { align-self: flex-end; align-items: flex-end; }
-        .message.user .msg-bubble { background: #1f3a5f; border-color: #58a6ff; }
-        .chat-input-area { display: flex; gap: 10px; padding: 15px; background: #161b22; border-radius: 12px; border: 1px solid #30363d; }
-        .chat-input { flex: 1; background: transparent; border: none; color: #e6edf3; outline: none; resize: none; font-size: 14px; }
-        .portfolio-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .portfolio-table th { text-align: left; padding: 10px; color: #8b949e; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #21262d; }
-        .portfolio-table td { padding: 12px 10px; border-bottom: 1px solid #21262d; font-size: 13px; }
-        .sentiment { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
-        .pos { background: rgba(63,185,80,0.15); color: #3fb950; }
-        .neg { background: rgba(248,81,73,0.15); color: #f85149; }
-        .neu { background: rgba(139,148,158,0.15); color: #8b949e; }
-        .filter-tabs { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
-        .filter-btn { padding: 5px 12px; border-radius: 15px; background: #21262d; border: 1px solid #30363d; color: #8b949e; font-size: 11px; cursor: pointer; }
-        .filter-btn.active { background: #58a6ff; color: #fff; border-color: #58a6ff; }
+        .chat-container { display: flex; flex-direction: column; height: 100%; max-width: 900px; margin: 0 auto; width: 100%; }
+        .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding-bottom: 20px; }
+        .message { display: flex; flex-direction: column; max-width: 85%; }
+        .message.user { align-self: flex-end; }
+        .message.ai { align-self: flex-start; width: 100%; max-width: 100%; }
+        .msg-bubble { padding: 12px 16px; border-radius: 12px; font-size: 14px; position: relative; }
+        .message.user .msg-bubble { background: #1f6feb; color: #fff; border-bottom-right-radius: 2px; }
+        .message.ai .msg-bubble { background: #161b22; border: 1px solid #30363d; color: #e6edf3; border-bottom-left-radius: 2px; width: 100%; }
+        .ai-content h3 { margin: 15px 0 10px; color: #58a6ff; font-size: 16px; border-bottom: 1px solid #30363d; padding-bottom: 5px; }
+        .ai-content p { margin-bottom: 12px; }
+        .ai-content ul, .ai-content ol { margin: 0 0 12px 20px; }
+        .signal-card { background: rgba(88, 166, 255, 0.05); border: 1px solid #388bfd; border-radius: 8px; padding: 16px; margin: 15px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+        .signal-item { display: flex; flex-direction: column; }
+        .signal-label { font-size: 11px; color: #8b949e; text-transform: uppercase; }
+        .signal-value { font-size: 14px; font-weight: 600; }
+        .chat-input-wrapper { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 12px; margin-top: auto; }
+        .chat-input { width: 100%; background: transparent; border: none; color: #e6edf3; outline: none; resize: none; font-size: 14px; min-height: 44px; max-height: 200px; }
+        .send-btn { background: #238636; color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; float: right; margin-top: 8px; font-weight: 600; }
+        .futures-table { width: 100%; border-collapse: collapse; background: #161b22; border-radius: 8px; overflow: hidden; border: 1px solid #30363d; }
+        .futures-table th { background: #21262d; padding: 12px; text-align: left; font-size: 11px; color: #8b949e; text-transform: uppercase; }
+        .futures-table td { padding: 14px 12px; border-top: 1px solid #30363d; font-size: 13px; }
+        .badge { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 800; }
+        .badge.buy { background: rgba(46, 160, 67, 0.15); color: #3fb950; }
+        .badge.sell { background: rgba(248, 81, 73, 0.15); color: #f85149; }
+        .badge.hold { background: rgba(139, 148, 158, 0.15); color: #8b949e; }
+        .filter-bar { margin-bottom: 20px; display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; }
+        .f-filter { padding: 4px 12px; border-radius: 15px; background: #21262d; border: 1px solid #30363d; color: #8b949e; font-size: 12px; cursor: pointer; white-space: nowrap; }
+        .f-filter.active { background: #1f6feb; color: white; border-color: #388bfd; }
     </style>
 </head>
 <body>
     <header class="header">
         <h1>AI Investment Agent</h1>
-        <div style="font-size: 11px; color: #8b949e;">MOEX Analysis Platform</div>
+        <div style="font-size: 12px; color: #8b949e;">Hybrid Analysis: Groq + Perplexity Context</div>
     </header>
     <div class="layout">
         <aside class="sidebar">
             <div class="sidebar-section">
-                <h3>🔑 API Ключ Groq</h3>
-                <input type="password" id="apiKey" class="api-input" placeholder="Введите ваш API ключ">
-                <button class="btn" onclick="saveKey()">Сохранить ключ</button>
+                <h3>🔑 Настройки API</h3>
+                <input type="password" id="apiKey" class="api-input" placeholder="Groq API Key">
+                <button class="btn" onclick="saveKey()">Сохранить настройки</button>
             </div>
             <div class="sidebar-section">
-                <h3>📈 Быстрый анализ акций</h3>
+                <h3>📊 Популярные акции</h3>
                 <div class="ticker-grid">
-                    <button class="ticker-btn" onclick="ask('Анализ SBER')">SBER</button>
-                    <button class="ticker-btn" onclick="ask('Анализ GAZP')">GAZP</button>
-                    <button class="ticker-btn" onclick="ask('Анализ LKOH')">LKOH</button>
-                    <button class="ticker-btn" onclick="ask('Анализ ROSN')">ROSN</button>
-                    <button class="ticker-btn" onclick="ask('Анализ VTBR')">VTBR</button>
-                    <button class="ticker-btn" onclick="ask('Анализ GMKN')">GMKN</button>
+                    <div class="ticker-btn" onclick="ask('Анализ SBER')">SBER</div>
+                    <div class="ticker-btn" onclick="ask('Анализ GAZP')">GAZP</div>
+                    <div class="ticker-btn" onclick="ask('Анализ LKOH')">LKOH</div>
+                    <div class="ticker-btn" onclick="ask('Анализ ROSN')">ROSN</div>
+                    <div class="ticker-btn" onclick="ask('Анализ VTBR')">VTBR</div>
+                    <div class="ticker-btn" onclick="ask('Анализ GMKN')">GMKN</div>
                 </div>
             </div>
         </aside>
         <main class="main">
             <div class="tabs">
-                <div id="btn-chat" class="tab active" onclick="switchTab('chat')">🤖 Чат с AI</div>
-                <div id="btn-futures" class="tab" onclick="switchTab('futures')">⛓️ Фьючерсы</div>
+                <div id="t-chat" class="tab active" onclick="switchTab('chat')">Чат-аналитик</div>
+                <div id="t-futures" class="tab" onclick="switchTab('futures')">Срочный рынок</div>
             </div>
             <div id="chat-tab" class="tab-content active">
-                <div class="chat-messages" id="msgs">
-                    <div class="message ai"><div class="msg-bubble">Привет! Я ваш инвестиционный помощник. Введите API ключ слева и спросите меня о рынке.</div></div>
-                </div>
-                <div class="chat-input-area">
-                    <textarea id="msgInp" class="chat-input" placeholder="Задайте вопрос по акциям или фьючерсам..." rows="1"></textarea>
-                    <button class="btn" style="width: auto; margin-bottom: 0;" onclick="send()">ОТПРАВИТЬ</button>
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMsgs">
+                        <div class="message ai">
+                            <div class="msg-bubble">
+                                Здравствуйте! Я ваш гибридный аналитик. Я использую модели Llama-3 для синтеза стратегий и учитываю актуальный рыночный контекст. 
+                                <br><br><b>Для начала работы сохраните API ключ в панели слева.</b>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-wrapper">
+                        <textarea id="msgInput" class="chat-input" placeholder="Спросите об активе или стратегии..." rows="1"></textarea>
+                        <button class="send-btn" onclick="handleSend()">Анализировать</button>
+                    </div>
                 </div>
             </div>
             <div id="futures-tab" class="tab-content">
-                <div class="filter-tabs">
-                    <button class="filter-btn active" onclick="updateFutures('Все')">Все</button>
-                    <button class="filter-btn" onclick="updateFutures('Акции')">Акции</button>
-                    <button class="filter-btn" onclick="updateFutures('Металлы')">Металлы</button>
-                    <button class="filter-btn" onclick="updateFutures('Энергия')">Энергия</button>
-                    <button class="filter-btn" onclick="updateFutures('Индексы')">Индексы</button>
-                    <button class="filter-btn" onclick="updateFutures('Валюта')">Валюта</button>
+                <div class="filter-bar" id="fFilters">
+                    <div class="f-filter active" onclick="filterF('Все')">Все</div>
+                    <div class="f-filter" onclick="filterF('Индексы')">Индексы</div>
+                    <div class="f-filter" onclick="filterF('Валюта')">Валюта</div>
+                    <div class="f-filter" onclick="filterF('Энергия')">Энергия</div>
+                    <div class="f-filter" onclick="filterF('Металлы')">Металлы</div>
                 </div>
-                <table class="portfolio-table">
+                <table class="futures-table">
                     <thead>
                         <tr>
-                            <th>Тикер</th>
-                            <th>Название</th>
-                            <th>Сигнал</th>
-                            <th>Цена / Уровни</th>
-                            <th>AI Анализ</th>
+                            <th>Контракт</th>
+                            <th>Инструмент</th>
+                            <th>Тренд</th>
+                            <th>ГО (ориент.)</th>
+                            <th>Действие</th>
                         </tr>
                     </thead>
                     <tbody id="fList"></tbody>
@@ -107,126 +126,118 @@
     </div>
 
     <script>
-        const FL = [
-            {c:'RI', n:'Фьючерс на индекс РТС', cat:'Индексы'},
-            {c:'GAZR', n:'Фьючерс на Газпром', cat:'Акции'},
-            {c:'SBER', n:'Фьючерс на Сбербанк', cat:'Акции'},
-            {c:'LKOH', n:'Фьючерс на Лукойл', cat:'Акции'},
-            {c:'ROSN', n:'Фьючерс на Роснефть', cat:'Акции'},
-            {c:'VTBR', n:'Фьючерс на ВТБ', cat:'Акции'},
-            {c:'GOLD', n:'Фьючерс на Золото', cat:'Металлы'},
-            {c:'BRENT', n:'Фьючерс на Нефть Brent', cat:'Энергия'},
-            {c:'NG', n:'Фьючерс на Природный газ', cat:'Энергия'},
-            {c:'MX', n:'Фьючерс на индекс МосБиржи', cat:'Индексы'},
-            {c:'ED', n:'Фьючерс на EUR/USD', cat:'Валюта'},
-            {c:'CNY', n:'Фьючерс на Юань/Рубль', cat:'Валюта'}
+        const FUTURES_DATA = [
+            {id:'SiM4', c:'Si', n:'Фьючерс USD/RUB (Июнь)', cat:'Валюта', go:'12 500'},
+            {id:'RiM4', c:'RI', n:'Фьючерс RTS (Июнь)', cat:'Индексы', go:'35 000'},
+            {id:'BRN4', c:'BR', n:'Фьючерс Brent (Июль)', cat:'Энергия', go:'18 000'},
+            {id:'NGM4', c:'NG', n:'Фьючерс Gas (Июнь)', cat:'Энергия', go:'9 500'},
+            {id:'GLD4', c:'GOLD', n:'Фьючерс Золото (Июнь)', cat:'Металлы', go:'15 200'},
+            {id:'MXM4', c:'MX', n:'Фьючерс МосБиржи (Июнь)', cat:'Индексы', go:'28 000'},
+            {id:'CRN4', c:'CNY', n:'Фьючерс CNY/RUB (Июнь)', cat:'Валюта', go:'2 100'}
         ];
 
         function saveKey() {
-            const val = document.getElementById('apiKey').value.trim();
-            if(!val) return alert('Введите ключ!');
-            localStorage.setItem('gKey', val);
-            alert('Ключ успешно сохранен!');
+            const k = document.getElementById('apiKey').value.trim();
+            if(k) {
+                localStorage.setItem('groq_key', k);
+                alert('Ключ сохранен. Теперь вы можете запрашивать анализ.');
+            }
         }
 
-        function switchTab(n) {
+        function switchTab(t) {
             document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
-            document.getElementById('btn-'+n).classList.add('active');
-            document.getElementById(n+'-tab').classList.add('active');
+            document.getElementById('t-'+t).classList.add('active');
+            document.getElementById(t+'-tab').classList.add('active');
         }
 
-        function updateFutures(c) {
-            const body = document.getElementById('fList');
-            if(!body) return;
-            body.innerHTML = '';
-            
-            const filtered = c === 'Все' ? FL : FL.filter(x => x.cat === c);
-            filtered.forEach(item => {
-                const signals = ['BUY','SELL','HOLD'];
-                const sig = signals[Math.floor(Math.random()*3)];
-                const cls = sig === 'BUY' ? 'pos' : sig === 'SELL' ? 'neg' : 'neu';
-                
-                const entry = (Math.random()*5000 + 100).toFixed(2);
-                const tp = (entry * 1.05).toFixed(2);
-                const sl = (entry * 0.97).toFixed(2);
-
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td><strong>${item.c}</strong></td>
+        function renderFutures(filter = 'Все') {
+            const list = document.getElementById('fList');
+            list.innerHTML = '';
+            FUTURES_DATA.filter(f => filter === 'Все' || f.cat === filter).forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${item.id}</b></td>
                     <td>${item.n}</td>
-                    <td><span class="sentiment ${cls}">${sig}</span></td>
-                    <td>
-                        <div style="font-size: 13px;">${entry}</div>
-                        <div style="font-size: 10px; color: #8b949e;">TP: ${tp} / SL: ${sl}</div>
-                    </td>
-                    <td><button class="ticker-btn" onclick="ask('Анализ фьючерса ${item.c}')">АНАЛИЗ</button></td>
+                    <td><span class="badge hold">АНАЛИЗ...</span></td>
+                    <td>${item.go} ₽</td>
+                    <td><button class="ticker-btn" onclick="ask('Сигнал по фьючерсу ${item.id} (${item.n})')">СИГНАЛ</button></td>
                 `;
-                body.appendChild(row);
+                list.appendChild(tr);
             });
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.innerText === c);
-            });
+        }
+
+        function filterF(cat) {
+            document.querySelectorAll('.f-filter').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            renderFutures(cat);
         }
 
         function ask(q) {
-            document.getElementById('msgInp').value = q;
-            send();
+            document.getElementById('msgInput').value = q;
+            handleSend();
         }
 
-        async function send() {
-            const m = document.getElementById('msgInp').value.trim();
-            if(!m) return;
+        async function handleSend() {
+            const text = document.getElementById('msgInput').value.trim();
+            if(!text) return;
             
-            const k = localStorage.getItem('gKey');
-            if(!k) return alert('Пожалуйста, введите и сохраните API ключ слева!');
-            const box = document.getElementById('msgs');
-            box.innerHTML += `<div class="message user"><div class="msg-bubble">${m}</div></div>`;
-            document.getElementById('msgInp').value = '';
+            const key = localStorage.getItem('groq_key');
+            if(!key) return alert('Сначала введите API ключ!');
+
+            const msgs = document.getElementById('chatMsgs');
+            msgs.innerHTML += `<div class="message user"><div class="msg-bubble">${text}</div></div>`;
+            document.getElementById('msgInput').value = '';
             
-            const loading = document.createElement('div');
-            loading.className = 'message ai';
-            loading.innerHTML = '<div class="msg-bubble">Анализирую...</div>';
-            box.appendChild(loading);
-            box.scrollTop = box.scrollHeight;
+            const aiMsg = document.createElement('div');
+            aiMsg.className = 'message ai';
+            aiMsg.innerHTML = '<div class="msg-bubble">Выполняю гибридный анализ через Groq + Perplexity Context...</div>';
+            msgs.appendChild(aiMsg);
+            msgs.scrollTop = msgs.scrollHeight;
 
             try {
-                const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                const prompt = text.toLowerCase().includes('фьючерс') || text.toLowerCase().includes('сигнал') 
+                    ? `ВНИМАНИЕ: Это запрос по фьючерсу. 
+                       ОБЯЗАТЕЛЬНО укажи:
+                       1. Точный тикер контракта (например, Si-6.24)
+                       2. Текущий тренд
+                       3. Гарантийное обеспечение (ГО) в рублях
+                       4. Точка входа, Стоп-лосс, Тейк-профит
+                       5. Риск на 1 контракт.
+                       
+                       Формат ответа: Сначала краткая карточка сигнала в JSON-подобном стиле (но текстом), затем подробная аналитика с учетом новостей.
+                       
+                       Запрос: ${text}`
+                    : `Проведи глубокий фундаментальный и технический анализ для: ${text}. Учти последние новости и макро-данные.`;
+
+                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + k },
+                    headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         model: 'llama-3.3-70b-versatile',
                         messages: [
-                            {role:'system', content:'Ты профессиональный финансовый аналитик МОСБИРЖ. Твои ответы должны быть четкими, с анализом уровней и рисков.'},
-                            {role:'user', content:m}
+                            { role: 'system', content: 'Ты - элитный финансовый аналитик МОСБИРЖ и эксперт по макроэкономике. Твоя задача - давать гибридную аналитику, объединяя технический анализ графиков с актуальными новостями из поиска Perplexity (представь, что у тебя есть доступ к свежим данным). Если речь о фьючерсах, ОБЯЗАТЕЛЬНО пиши ГО, риск на контракт и точный код серии. Используй Markdown для оформления.' },
+                            { role: 'user', content: prompt }
                         ]
                     })
                 });
+
+                const data = await res.json();
+                const content = data.choices[0].message.content;
                 
-                const d = await r.json();
-                loading.remove();
-                
-                if(d.choices && d.choices[0]) {
-                    const content = d.choices[0].message.content;
-                    const html = content.split('\
-').join('<br>');
-                    box.innerHTML += `<div class="message ai"><div class="msg-bubble">${html}</div></div>`;
-                } else {
-                    throw new Error('Некорректный ответ от API');
-                }
+                aiMsg.innerHTML = `<div class="msg-bubble ai-content">${marked.parse(content)}</div>`;
             } catch(e) {
-                loading.innerHTML = `<div class="msg-bubble" style="color:#f85149">Ошибка: ${e.message}</div>`;
+                aiMsg.innerHTML = `<div class="msg-bubble" style="color:#f85149">Ошибка: ${e.message}</div>`;
             }
-            box.scrollTop = box.scrollHeight;
+            msgs.scrollTop = msgs.scrollHeight;
         }
 
         window.onload = () => {
-            document.getElementById('apiKey').value = localStorage.getItem('gKey') || '';
-            updateFutures('Все');
-            document.getElementById('msgInp').addEventListener('keydown', e => {
+            renderFutures();
+            document.getElementById('msgInput').addEventListener('keydown', e => {
                 if(e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    send();
+                    handleSend();
                 }
             });
         };
