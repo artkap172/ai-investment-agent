@@ -1,1 +1,261 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Investment Agent | Hybrid Intelligence</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; line-height: 1.6; }
+        .header { background: #161b22; border-bottom: 1px solid #30363d; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .header h1 { font-size: 20px; font-weight: 700; color: #58a6ff; }
+        .layout { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 61px); }
+        .sidebar { background: #0d1117; border-right: 1px solid #30363d; padding: 20px; overflow-y: auto; }
+        .sidebar-section { margin-bottom: 25px; }
+        .sidebar-section h3 { font-size: 11px; text-transform: uppercase; color: #8b949e; margin-bottom: 12px; letter-spacing: 1px; }
+        .api-input { width: 100%; background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px 12px; color: #e6edf3; font-size: 13px; margin-bottom: 10px; }
+        .btn { width: 100%; padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; background: #238636; color: #fff; transition: 0.2s; }
+        .btn:hover { background: #2ea043; }
+        .ticker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .ticker-btn { padding: 8px; background: #21262d; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; font-size: 12px; cursor: pointer; text-align: center; overflow: hidden; text-overflow: ellipsis; }
+        .ticker-btn:hover { border-color: #8b949e; }
+        .main { display: flex; flex-direction: column; background: #0d1117; overflow: hidden; }
+        .tabs { display: flex; background: #161b22; border-bottom: 1px solid #30363d; padding: 0 20px; }
+        .tab { padding: 14px 20px; font-size: 14px; cursor: pointer; color: #8b949e; border-bottom: 2px solid transparent; }
+        .tab.active { color: #58a6ff; border-bottom-color: #58a6ff; font-weight: 600; }
+        .tab-content { display: none; flex: 1; overflow-y: auto; padding: 24px; }
+        .tab-content.active { display: flex; flex-direction: column; }
+        .chat-container { display: flex; flex-direction: column; height: 100%; max-width: 900px; margin: 0 auto; width: 100%; }
+        .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px; }
+        .message { display: flex; flex-direction: column; max-width: 90%; }
+        .message.user { align-self: flex-end; }
+        .message.ai { align-self: flex-start; width: 100%; }
+        .msg-bubble { padding: 12px 16px; border-radius: 12px; font-size: 14px; position: relative; word-wrap: break-word; }
+        .message.user .msg-bubble { background: #1f6feb; color: #fff; border-bottom-right-radius: 2px; }
+        .message.ai .msg-bubble { background: #161b22; border: 1px solid #30363d; color: #e6edf3; border-bottom-left-radius: 2px; width: 100%; }
+        .ai-content { width: 100%; }
+        .ai-content h1, .ai-content h2, .ai-content h3 { color: #58a6ff; margin: 20px 0 10px; padding-bottom: 5px; border-bottom: 1px solid #21262d; }
+        .ai-content p { margin-bottom: 15px; }
+        .ai-content ul, .ai-content ol { margin-left: 20px; margin-bottom: 15px; }
+        .ai-content table { border-collapse: collapse; width: 100%; margin-bottom: 15px; }
+        .ai-content th, .ai-content td { padding: 8px; border: 1px solid #30363d; text-align: left; }
+        .ai-content th { background: #21262d; font-size: 12px; color: #8b949e; }
+        .chat-input-wrapper { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 12px; }
+        .chat-input { width: 100%; background: transparent; border: none; color: #e6edf3; outline: none; resize: none; font-size: 14px; min-height: 44px; }
+        .send-btn { background: #238636; color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; float: right; margin-top: 8px; font-weight: 600; }
+        .futures-table { width: 100%; border-collapse: collapse; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+        .futures-table th { background: #21262d; padding: 12px; text-align: left; font-size: 11px; color: #8b949e; text-transform: uppercase; }
+        .futures-table td { padding: 14px 12px; border-top: 1px solid #30363d; font-size: 13px; }
+        .badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 800; }
+        .badge.buy { background: rgba(46, 160, 67, 0.2); color: #3fb950; }
+        .badge.sell { background: rgba(248, 81, 73, 0.2); color: #f85149; }
+        .badge.hold { background: rgba(139, 148, 158, 0.2); color: #8b949e; }
+        .filter-bar { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+        .f-filter { padding: 5px 15px; border-radius: 20px; background: #21262d; border: 1px solid #30363d; color: #8b949e; font-size: 12px; cursor: pointer; white-space: nowrap; }
+        .f-filter.active { background: #1f6feb; color: white; border-color: #388bfd; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>AI Investment Agent</h1>
+        <div style="font-size: 11px; color: #8b949e;">True Hybrid: Perplexity (Context) + Groq (Synthesis)</div>
+    </header>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h3>🔑 API Ключи</h3>
+                <input type="password" id="groqKey" class="api-input" placeholder="Groq API Key (Llama-3)">
+                <input type="password" id="pplxKey" class="api-input" placeholder="Perplexity API Key (Search)">
+                <button class="btn" onclick="saveKeys()">Сохранить настройки</button>
+            </div>
+            <div class="sidebar-section">
+                <h3>📈 Быстрый анализ</h3>
+                <div class="ticker-grid">
+                    <div class="ticker-btn" onclick="ask('Анализ SBER')">SBER</div>
+                    <div class="ticker-btn" onclick="ask('Анализ GAZP')">GAZP</div>
+                    <div class="ticker-btn" onclick="ask('Анализ LKOH')">LKOH</div>
+                    <div class="ticker-btn" onclick="ask('Анализ ROSN')">ROSN</div>
+                    <div class="ticker-btn" onclick="ask('Анализ USD/RUB')">USD/RUB</div>
+                    <div class="ticker-btn" onclick="ask('Анализ Золота')">GOLD</div>
+                </div>
+            </div>
+        </aside>
+        <main class="main">
+            <div class="tabs">
+                <div id="t-chat" class="tab active" onclick="switchTab('chat')">Гибридный Чат</div>
+                <div id="t-futures" class="tab" onclick="switchTab('futures')">Срочный рынок (Сигналы)</div>
+            </div>
+            <div id="chat-tab" class="tab-content active">
+                <div class="chat-container">
+                    <div class="chat-messages" id="msgs">
+                        <div class="message ai">
+                            <div class="msg-bubble">
+                                <b>Добро пожаловать в Гибридный Агент!</b><br>
+                                Я использую <b>Perplexity</b> для поиска актуальных новостей и <b>Groq (Llama-3)</b> для синтеза инвестиционных стратегий.
+                                <br><br>Укажите API ключи слева и выберите актив для анализа.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area" style="background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 12px; margin-top: auto;">
+                        <textarea id="msgInp" class="chat-input" placeholder="Введите название актива или вопрос по рынку..." rows="1" style="width: 100%; background: transparent; border: none; color: #e6edf3; outline: none; resize: none; font-size: 14px; min-height: 44px;"></textarea>
+                        <button class="send-btn" onclick="handleSend()" style="background: #238636; color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; float: right; margin-top: 8px; font-weight: 600;">Анализировать</button>
+                    </div>
+                </div>
+            </div>
+            <div id="futures-tab" class="tab-content">
+                <div class="filter-bar">
+                    <div class="f-filter active" onclick="setFilt('Все', event)">Все</div>
+                    <div class="f-filter" onclick="setFilt('Индексы', event)">Индексы</div>
+                    <div class="f-filter" onclick="setFilt('Энергия', event)">Энергия</div>
+                    <div class="f-filter" onclick="setFilt('Валюта', event)">Валюта</div>
+                    <div class="f-filter" onclick="setFilt('Металлы', event)">Металлы</div>
+                </div>
+                <table class="futures-table">
+                    <thead>
+                        <tr>
+                            <th>Тикер</th>
+                            <th>Название</th>
+                            <th>ГО (Гарант. об.)</th>
+                            <th>AI Сигнал</th>
+                            <th>Действие</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fList"></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
 
+    <script>
+        const FL = [
+            {id:'Si-6.26', c:'Si', n:'Фьючерс USD/RUB (Июнь)', cat:'Валюта', go:'12 500'},
+            {id:'Ri-6.26', c:'RI', n:'Фьючерс RTS (Июнь)', cat:'Индексы', go:'35 000'},
+            {id:'Br-7.26', c:'BR', n:'Фьючерс Brent (Июль)', cat:'Энергия', go:'18 200'},
+            {id:'Ng-6.26', c:'NG', n:'Фьючерс Natural Gas (Июнь)', cat:'Энергия', go:'9 800'},
+            {id:'Gold-6.26', c:'GOLD', n:'Фьючерс Золото (Июнь)', cat:'Металлы', go:'15 400'},
+            {id:'Mx-6.26', c:'MX', n:'Фьючерс МосБиржи (Июнь)', cat:'Индексы', go:'28 000'},
+            {id:'Cny-6.26', c:'CNY', n:'Фьючерс CNY/RUB (Июнь)', cat:'Валюта', go:'2 150'}
+        ];
+
+        function saveKeys() {
+            const g = document.getElementById('groqKey').value.trim();
+            const p = document.getElementById('pplxKey').value.trim();
+            if(g) localStorage.setItem('groq_k', g);
+            if(p) localStorage.setItem('pplx_k', p);
+            alert('Настройки сохранены.');
+        }
+
+        function switchTab(t) {
+            document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+            document.getElementById('t-'+t).classList.add('active');
+            document.getElementById(t+'-tab').classList.add('active');
+        }
+
+        function renderF(cat = 'Все') {
+            const b = document.getElementById('fList');
+            b.innerHTML = '';
+            FL.filter(f => cat === 'Все' || f.cat === cat).forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${item.id}</b></td>
+                    <td>${item.n}</td>
+                    <td>${item.go} ₽</td>
+                    <td><span class="badge hold">АНАЛИЗ...</span></td>
+                    <td><button class="ticker-btn" onclick="ask('Сигнал по фьючерсу ${item.id}')">СИГНАЛ</button></td>
+                `;
+                b.appendChild(tr);
+            });
+        }
+
+        function setFilt(c, e) {
+            document.querySelectorAll('.f-filter').forEach(f => f.classList.remove('active'));
+            e.target.classList.add('active');
+            renderF(c);
+        }
+
+        function ask(q) {
+            document.getElementById('msgInp').value = q;
+            handleSend();
+        }
+
+        async function handleSend() {
+            const text = document.getElementById('msgInp').value.trim();
+            if(!text) return;
+            
+            const gk = localStorage.getItem('groq_k');
+            const pk = localStorage.getItem('pplx_k');
+            if(!gk) return alert('Нужен Groq API Key!');
+
+            const box = document.getElementById('msgs');
+            box.innerHTML += `<div class="message user"><div class="msg-bubble">${text}</div></div>`;
+            document.getElementById('msgInp').value = '';
+            box.scrollTop = box.scrollHeight;
+
+            const aiMsg = document.createElement('div');
+            aiMsg.className = 'message ai';
+            aiMsg.innerHTML = '<div class="msg-bubble">Запускаю гибридный поиск и анализ...</div>';
+            box.appendChild(aiMsg);
+
+            try {
+                let context = "Актуальных новостей из поиска нет (ключ Perplexity не указан). Используй внутренние данные.";
+                if(pk) {
+                    aiMsg.innerHTML = '<div class="msg-bubble">🔍 Шаг 1: Поиск актуальных новостей в Perplexity...</div>';
+                    const pRes = await fetch('https://api.perplexity.ai/chat/completions', {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + pk, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            model: 'sonar',
+                            messages: [{ role: 'user', content: `Найди последние важные новости, уровни и события для актива: ${text}. Выдели ключевые драйверы.` }]
+                        })
+                    });
+                    const pData = await pRes.json();
+                    context = pData.choices[0].message.content;
+                }
+
+                aiMsg.innerHTML = '<div class="msg-bubble">🧠 Шаг 2: Синтез стратегии через Groq (Llama-3)...</div>';
+                const isFutures = text.toLowerCase().includes('фьючерс') || text.toLowerCase().includes('сигнал');
+                const systemPrompt = `Ты - элитный финансовый аналитик МОСБИРЖ. Твоя цель - дать профессиональный ответ. 
+                    ТЕБЕ ПРЕДОСТАВЛЕН СВЕЖИЙ КОНТЕКСТ ИЗ ПОИСКА:
+                    ---
+                    ${context}
+                    ---feat: final true hybrid implementation (Perplexity context + Groq synthesis), fixed UI text rendering and GO fields
+                    ${isFutures ? 'ЭТО ЗАПРОС ПО ФЬЮЧЕРСУ. ОБЯЗАТЕЛЬНО: 1. Точный тикер контракта. 2. Тренд. 3. ГО (гарантийное обеспечение) в рублях. 4. Точки входа, стоп, тейк. 5. Риск на контракт.' : ''}
+                    Используй Markdown. Оформляй таблицы и списки.`;
+
+                const gRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + gk, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'llama-3.3-70b-versatile',
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: text }
+                        ]
+                    })
+                });
+
+                const gData = await gRes.json();
+                const result = gData.choices[0].message.content;
+                aiMsg.innerHTML = `<div class="msg-bubble ai-content">${marked.parse(result)}</div>`;
+            } catch(e) {
+                aiMsg.innerHTML = `<div class="msg-bubble" style="color:#f85149">Ошибка: ${e.message}</div>`;
+            }
+            box.scrollTop = box.scrollHeight;
+        }
+
+        window.onload = () => {
+            renderF();
+            document.getElementById('groqKey').value = localStorage.getItem('groq_k') || '';
+            document.getElementById('pplxKey').value = localStorage.getItem('pplx_k') || '';
+            document.getElementById('msgInp').addEventListener('keydown', e => {
+                if(e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                }
+            });
+        };
+    </script>
+</body>
+</html>
