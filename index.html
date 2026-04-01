@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Investment Agent | Free Hybrid Intelligence</title>
+    <title>AI Investment Agent | MOEX ISS API Hybrid</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -19,9 +19,274 @@
         .muted { color: #8b949e; font-size: 12px; }
         .btn { width: 100%; padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; background: #238636; color: #fff; transition: 0.2s; }
         .btn:hover { background: #2ea043; }
-        .ticker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .ticker-btn { padding: 8px; background: #21262d; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; font-size: 12px; cursor: pointer; text-align: center; overflow: hidden; text-overflow: ellipsis; }
-        .ticker-btn:hover { border-color: #8b949e; }
+        .main { display: flex; flex-direction: column; background: #0d1117; overflow: hidden; }
+        .tabs { display: flex; background: #161b22; border-bottom: 1px solid #30363d; padding: 0 20px; }
+        .tab { padding: 14px 20px; font-size: 14px; cursor: pointer; color: #8b949e; border-bottom: 2px solid transparent; }
+        .tab.active { color: #58a6ff; border-bottom-color: #58a6ff; font-weight: 600; }
+        .tab-content { display: none; flex: 1; overflow-y: auto; padding: 24px; }
+        .tab-content.active { display: flex; flex-direction: column; }
+        .chat-container { display: flex; flex-direction: column; height: 100%; max-width: 900px; margin: 0 auto; width: 100%; }
+        .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px; }
+        .message { display: flex; flex-direction: column; max-width: 90%; }
+        .message.user { align-self: flex-end; }
+        .message.ai { align-self: flex-start; width: 100%; }
+        .msg-bubble { padding: 12px 16px; border-radius: 12px; font-size: 14px; position: relative; word-wrap: break-word; }
+        .message.user .msg-bubble { background: #1f6feb; color: #fff; border-bottom-right-radius: 2px; }
+        .message.ai .msg-bubble { background: #161b22; border: 1px solid #30363d; color: #e6edf3; border-bottom-left-radius: 2px; width: 100%; }
+        .ai-content h3 { color: #58a6ff; margin-bottom: 10px; border-bottom: 1px solid #30363d; padding-bottom: 5px; }
+        .ai-content table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        .ai-content th, .ai-content td { border: 1px solid #30363d; padding: 8px; text-align: left; font-size: 13px; }
+        .ai-content th { background: #21262d; color: #8b949e; }
+        .futures-table { width: 100%; border-collapse: collapse; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+        .futures-table th { background: #21262d; padding: 12px; text-align: left; font-size: 11px; color: #8b949e; text-transform: uppercase; }
+        .futures-table td { padding: 14px 12px; border-top: 1px solid #30363d; font-size: 13px; }
+        .badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 800; }
+        .badge.buy { background: rgba(46, 160, 67, 0.2); color: #3fb950; }
+        .badge.sell { background: rgba(248, 81, 73, 0.2); color: #f85149; }
+        .badge.hold { background: rgba(139, 148, 158, 0.2); color: #8b949e; }
+        .action-btn { padding: 7px 10px; border-radius: 6px; border: 1px solid #30363d; background: #0d1117; color: #e6edf3; cursor: pointer; font-size: 12px; }
+        .action-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+        .inp-container { display: flex; gap: 10px; margin-top: 10px; }
+        .msg-input { flex: 1; background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px; color: #e6edf3; resize: none; height: 44px; }
+        .status-box { background: #11161d; border: 1px solid #30363d; border-radius: 8px; padding: 12px; margin-top: 10px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>AI Investment Agent</h1>
+        <div class="header-note">
+            <b>MOEX ISS API + Groq Hybrid</b><br>
+            Данные в реальном времени с Московской Биржи
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <section class="sidebar-section">
+                <h3>🔑 Настройки Groq</h3>
+                <input type="password" id="groqKey" class="api-input" placeholder="Gsk-...">
+                <button class="btn" onclick="saveSettings()">Сохранить настройки</button>
+                <div id="engineStatus" class="status-box">Режим: Ожидание ключа Groq...</div>
+            </section>
+            <section class="sidebar-section">
+                <h3>📊 Спецификация</h3>
+                <div id="specBox" class="status-box">Выберите инструмент для загрузки данных</div>
+            </section>
+        </aside>
+
+        <main class="main">
+            <div class="tabs">
+                <div id="t-chat" class="tab active" onclick="switchTab('chat')">Анализ & Чат</div>
+                <div id="t-forts" class="tab" onclick="switchTab('forts')">Срочный рынок (FORTS)</div>
+            </div>
+
+            <div id="chat-tab" class="tab-content active">
+                <div class="chat-container">
+                    <div id="msgs" class="chat-messages">
+                        <div class="message ai">
+                            <div class="msg-bubble">
+                                <b>Добро пожаловать.</b> Я использую MOEX ISS API для получения реальных данных.<br>
+                                Введите тикер (например, Br-7.26 или SBER) или выберите из списка в соседней вкладке.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="inp-container">
+                        <textarea id="msgInp" class="msg-input" placeholder="Введите тикер или вопрос..."></textarea>
+                        <button class="btn" style="width:auto; padding: 0 20px;" onclick="handleSend()">Анализ</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="forts-tab" class="tab-content">
+                <table class="futures-table">
+                    <thead>
+                        <tr>
+                            <th>Контракт</th>
+                            <th>Последняя цена</th>
+                            <th>ГО (Margin)</th>
+                            <th>Действие</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fList">
+                        <tr><td colspan="4" style="text-align:center">Загрузка данных MOEX...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let appState = { groqKey: localStorage.getItem('groqKey') || '' };
+        if(appState.groqKey) document.getElementById('groqKey').value = appState.groqKey;
+
+        function saveSettings() {
+            appState.groqKey = document.getElementById('groqKey').value.trim();
+            localStorage.setItem('groqKey', appState.groqKey);
+            updateStatus();
+        }
+
+        function updateStatus() {
+            const status = document.getElementById('engineStatus');
+            status.innerHTML = appState.groqKey ? '<b>Режим: Groq + MOEX Live</b>' : '<b>Режим: Только MOEX данные (без AI)</b>';
+        }
+        updateStatus();
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(`t-${tab}`).classList.add('active');
+            document.getElementById(`${tab}-tab`).classList.add('active');
+        }
+
+        async function fetchMoex(url) {
+            try {
+                const r = await fetch(url);
+                return await r.json();
+            } catch(e) { return null; }
+        }
+
+        async function getSecData(ticker) {
+            // Пытаемся найти в разных секциях: FORTS или Stock
+            const urls = [
+                `https://iss.moex.com/iss/engines/futures/markets/forts/securities/${ticker}.json`,
+                `https://iss.moex.com/iss/engines/stock/markets/shares/securities/${ticker}.json`
+            ];
+            for(let url of urls) {
+                const data = await fetchMoex(url);
+                if(data && data.securities && data.securities.data.length > 0) return data;
+            }
+            return null;
+        }
+
+        function extractTable(data, name) {
+            const table = data[name];
+            if(!table) return [];
+            return table.data.map(row => {
+                let obj = {};
+                table.columns.forEach((col, i) => obj[col] = row[i]);
+                return obj;
+            });
+        }
+
+        async function loadForts() {
+            const data = await fetchMoex('https://iss.moex.com/iss/engines/futures/markets/forts/securities.json?securities.columns=SECID,SHORTNAME,LASTPRICE,INITIALMARGIN');
+            if(!data) return;
+            const items = extractTable(data, 'securities').filter(x => x.LASTPRICE).slice(0, 15);
+            const html = items.map(i => `
+                <tr>
+                    <td><b>${i.SECID}</b><br><span class="muted">${i.SHORTNAME}</span></td>
+                    <td>${i.LASTPRICE}</td>
+                    <td>${i.INITIALMARGIN || '—'}</td>
+                    <td><button class="action-btn" onclick="ask('${i.SECID}')">Анализ</button></td>
+                </tr>
+            `).join('');
+            document.getElementById('fList').innerHTML = html;
+        }
+        loadForts();
+
+        function addMessage(text, type = 'ai', isHtml = false) {
+            const msgs = document.getElementById('msgs');
+            const wrap = document.createElement('div');
+            wrap.className = `message ${type}`;
+            const bubble = document.createElement('div');
+            bubble.className = 'msg-bubble';
+            if(isHtml) {
+                bubble.innerHTML = `<div class="ai-content">${text}</div>`;
+            } else {
+                bubble.textContent = text;
+            }
+            wrap.appendChild(bubble);
+            msgs.appendChild(wrap);
+            msgs.scrollTop = msgs.scrollHeight;
+        }
+
+        async function ask(prompt) {
+            const ticker = prompt.split(' ').pop().toUpperCase();
+            addMessage(prompt, 'user');
+            
+            addMessage('Запрашиваю данные MOEX ISS...', 'ai');
+            const raw = await getSecData(ticker);
+            
+            if(!raw) {
+                addMessage('Инструмент не найден в базе MOEX. Попробуйте другой тикер.', 'ai');
+                return;
+            }
+
+            const sec = extractTable(raw, 'securities')[0];
+            const market = extractTable(raw, 'marketdata')[0] || {};
+            
+            const info = {
+                ticker: sec.SECID,
+                name: sec.SHORTNAME,
+                last: market.LAST || market.LASTPRICE || '—',
+                margin: sec.INITIALMARGIN || '—',
+                step: sec.MINSTEP || '—',
+                stepPrice: sec.STEPPRICE || '—'
+            };
+
+            document.getElementById('specBox').innerHTML = `
+                <b>${info.ticker}</b> (${info.name})<br>
+                Цена: ${info.last}<br>
+                ГО: ${info.margin}<br>
+                Шаг: ${info.step} (${info.stepPrice} ₽)
+            `;
+
+            if(!appState.groqKey) {
+                addMessage(`Данные получены: ${info.ticker} по цене ${info.last}. Для глубокого AI-анализа введите API ключ.`, 'ai');
+                return;
+            }
+
+            addMessage('Генерирую анализ через Groq...', 'ai');
+            try {
+                const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${appState.groqKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'llama-3.3-70b-versatile',
+                        messages: [
+                            { role: 'system', content: 'Ты про-трейдер. Используй ПЕРЕДАННЫЕ данные MOEX. Считай риск: вход, стоп, цель. Стоп ставь за уровень или 1.5 ATR. Риск 1% от депо 100к. Не выдумывай цену, бери LAST.' },
+                            { role: 'user', content: `Данные MOEX: ${JSON.stringify(info)}. Сделай технический разбор и план сделки.` }
+                        ]
+                    })
+                });
+                const res = await resp.json();
+                addMessage(marked.parse(res.choices[0].message.content), 'ai', true);
+            } catch(e) {
+                addMessage('Ошибка AI: проверьте ключ или сеть.', 'ai');
+            }
+        }
+
+        function handleSend() {
+            const inp = document.getElementById('msgInp');
+            if(!inp.value.trim()) return;
+            ask(inp.value.trim());
+            inp.value = '';
+        }
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang=\"ru\">
+<head>
+    <meta charset=\"UTF-8\">
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+    <title>AI Investment Agent | MOEX ISS Edition</title>
+    <script src=\"https://cdn.jsdelivr.net/npm/marked/marked.min.js\"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; line-height: 1.6; }
+        .header { background: #161b22; border-bottom: 1px solid #30363d; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; gap: 16px; }
+        .header h1 { font-size: 20px; font-weight: 700; color: #58a6ff; }
+        .header-note { font-size: 11px; color: #8b949e; text-align: right; }
+        .layout { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 61px); }
+        .sidebar { background: #0d1117; border-right: 1px solid #30363d; padding: 20px; overflow-y: auto; }
+        .sidebar-section { margin-bottom: 25px; }
+        .sidebar-section h3 { font-size: 11px; text-transform: uppercase; color: #8b949e; margin-bottom: 12px; letter-spacing: 1px; }
+        .api-input, .api-select { width: 100%; background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px 12px; color: #e6edf3; font-size: 13px; margin-bottom: 10px; }
+        .btn { width: 100%; padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; background: #238636; color: #fff; transition: 0.2s; }
+        .btn:hover { background: #2ea043; }
         .main { display: flex; flex-direction: column; background: #0d1117; overflow: hidden; }
         .tabs { display: flex; background: #161b22; border-bottom: 1px solid #30363d; padding: 0 20px; }
         .tab { padding: 14px 20px; font-size: 14px; cursor: pointer; color: #8b949e; border-bottom: 2px solid transparent; }
@@ -39,319 +304,249 @@
         .ai-content { width: 100%; }
         .ai-content h1, .ai-content h2, .ai-content h3 { color: #58a6ff; margin: 20px 0 10px; padding-bottom: 5px; border-bottom: 1px solid #21262d; }
         .ai-content p { margin-bottom: 15px; }
-        .ai-content ul, .ai-content ol { margin-left: 20px; margin-bottom: 15px; }
         .ai-content table { border-collapse: collapse; width: 100%; margin-bottom: 15px; }
         .ai-content th, .ai-content td { padding: 8px; border: 1px solid #30363d; text-align: left; }
         .ai-content th { background: #21262d; font-size: 12px; color: #8b949e; }
-        .status-box { background: #11161d; border: 1px solid #30363d; border-radius: 8px; padding: 12px; margin-top: 10px; }
-        .send-btn { background: #238636; color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; float: right; margin-top: 8px; font-weight: 600; }
+        .status-box { background: #11161d; border: 1px solid #30363d; border-radius: 8px; padding: 12px; margin-top: 10px; font-size: 12px; }
         .futures-table { width: 100%; border-collapse: collapse; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
         .futures-table th { background: #21262d; padding: 12px; text-align: left; font-size: 11px; color: #8b949e; text-transform: uppercase; }
         .futures-table td { padding: 14px 12px; border-top: 1px solid #30363d; font-size: 13px; }
         .badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 800; }
-        .badge.buy { background: rgba(46, 160, 67, 0.2); color: #3fb950; }
-        .badge.sell { background: rgba(248, 81, 73, 0.2); color: #f85149; }
-        .badge.hold { background: rgba(139, 148, 158, 0.2); color: #8b949e; }
-        .filter-bar { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
-        .f-filter { padding: 5px 15px; border-radius: 20px; background: #21262d; border: 1px solid #30363d; color: #8b949e; font-size: 12px; cursor: pointer; white-space: nowrap; }
-        .f-filter.active { background: #1f6feb; color: white; border-color: #388bfd; }
-        .action-btn { padding: 7px 10px; border-radius: 6px; border: 1px solid #30363d; background: #0d1117; color: #e6edf3; cursor: pointer; }
-        .action-btn:hover { border-color: #58a6ff; color: #58a6ff; }
-
-        @media (max-width: 960px) {
-            .layout { grid-template-columns: 1fr; height: auto; }
-            .sidebar { border-right: none; border-bottom: 1px solid #30363d; }
-            .header { flex-direction: column; align-items: flex-start; }
-            .header-note { text-align: left; }
-            .futures-table { display: block; overflow-x: auto; }
-        }
+        .badge.buy { background: rgba(46,160,67,0.2); color: #3fb950; }
+        .badge.sell { background: rgba(248,81,73,0.2); color: #f85149; }
+        .badge.hold { background: rgba(139,148,158,0.2); color: #8b949e; }
+        .input-area { display: flex; gap: 10px; padding: 20px 0; }
+        .msg-input { flex: 1; background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px; color: #e6edf3; resize: none; height: 44px; }
     </style>
 </head>
 <body>
-    <header class="header">
+    <header class=\"header\">
         <h1>AI Investment Agent</h1>
-        <div class="header-note">
-            Free Hybrid: Groq / Local Rule-based Context<br>
-            Без Perplexity API и без платного search-слоя
+        <div class=\"header-note\">
+            Data: MOEX ISS API | Model: Groq / Local<br>
+            <span id=\"lastUpdate\">Обновление...</span>
         </div>
     </header>
 
-    <div class="layout">
-        <aside class="sidebar">
-            <div class="sidebar-section">
-                <h3>🔑 Настройки модели</h3>
-                <select id="engineMode" class="api-select">
-                    <option value="local">Локальный / без API</option>
-                    <option value="groq">Groq API</option>
+    <div class=\"layout\">
+        <aside class=\"sidebar\">
+            <section class=\"sidebar-section\">
+                <h3>⚙️ Модель</h3>
+                <select id=\"engineMode\" class=\"api-select\" onchange=\"saveSettings()\">
+                    <option value=\"local\">Локальный (без API)</option>
+                    <option value=\"groq\">Groq API (Llama 3.3)</option>
                 </select>
-                <input type="password" id="groqKey" class="api-input" placeholder="Groq API Key (необязательно)">
-                <button class="btn" onclick="saveSettings()">Сохранить настройки</button>
-                <div class="status-box muted" id="engineStatus">
-                    Активен бесплатный локальный режим. Perplexity полностью отключён.
-                </div>
-            </div>
-
-            <div class="sidebar-section">
-                <h3>📈 Быстрый анализ</h3>
-                <div class="ticker-grid">
-                    <div class="ticker-btn" onclick="ask('Анализ SBER')">SBER</div>
-                    <div class="ticker-btn" onclick="ask('Анализ GAZP')">GAZP</div>
-                    <div class="ticker-btn" onclick="ask('Анализ LKOH')">LKOH</div>
-                    <div class="ticker-btn" onclick="ask('Анализ ROSN')">ROSN</div>
-                    <div class="ticker-btn" onclick="ask('Анализ USD/RUB')">USD/RUB</div>
-                    <div class="ticker-btn" onclick="ask('Анализ Золота')">GOLD</div>
-                </div>
-            </div>
+                <input type=\"password\" id=\"groqKey\" class=\"api-input\" placeholder=\"Groq API Key\" onchange=\"saveSettings()\">
+                <div id=\"engineStatus\" class=\"status-box\">Режим: Локальный</div>
+            </section>
+            
+            <section class=\"sidebar-section\">
+                <h3>💰 Капитал и Риск</h3>
+                <input type=\"number\" id=\"userCapital\" class=\"api-input\" value=\"100000\" placeholder=\"Капитал (руб)\">
+                <input type=\"number\" id=\"userRisk\" class=\"api-input\" value=\"1\" placeholder=\"Риск на сделку (%)\">
+            </section>
         </aside>
 
-        <main class="main">
-            <div class="tabs">
-                <div id="t-chat" class="tab active" onclick="switchTab('chat')">Гибридный Чат</div>
-                <div id="t-futures" class="tab" onclick="switchTab('futures')">Срочный рынок (Сигналы)</div>
+        <main class=\"main\">
+            <div class=\"tabs\">
+                <div id=\"t-chat\" class=\"tab active\" onclick=\"switchTab('chat')\">Анализ и Чат</div>
+                <div id=\"t-forts\" class=\"tab\" onclick=\"switchTab('forts')\">Рынок FORTS</div>
             </div>
 
-            <div id="chat-tab" class="tab-content active">
-                <div class="chat-container">
-                    <div class="chat-messages" id="msgs">
-                        <div class="message ai">
-                            <div class="msg-bubble">
-                                <b>Добро пожаловать в бесплатный AI Investment Agent.</b><br>
-                                Теперь приложение работает без <b>Perplexity API</b>: можно использовать <b>локальный бесплатный режим</b> или <b>Groq</b> как опцию.
-                                <br><br>
-                                Для срочного рынка карточки показывают конкретный контракт и <b>ГО в pt</b>, а не в рублях.
+            <div id=\"chat-tab\" class=\"tab-content active\">
+                <div class=\"chat-container\">
+                    <div id=\"msgs\" class=\"chat-messages\">
+                        <div class=\"message ai\">
+                            <div class=\"msg-bubble\">
+                                Добро пожаловать. Я использую реальные данные MOEX ISS. Выберите инструмент в таблице или напишите тикер в чат.
                             </div>
                         </div>
                     </div>
-
-                    <div class="chat-input-area" style="background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 12px; margin-top: auto;">
-                        <textarea id="msgInp" class="chat-input" placeholder="Введите название актива, вопрос по рынку или запрос на анализ..." rows="1" style="width: 100%; background: transparent; border: none; color: #e6edf3; outline: none; resize: none; font-size: 14px; min-height: 44px;"></textarea>
-                        <button class="send-btn" onclick="handleSend()">Анализировать</button>
+                    <div class=\"input-area\">
+                        <textarea id=\"msgInp\" class=\"msg-input\" placeholder=\"Введите тикер (напр. Br-7.26) или вопрос...\"></textarea>
+                        <button class=\"btn\" style=\"width: auto;\" onclick=\"handleSend()\">Отправить</button>
                     </div>
                 </div>
             </div>
 
-            <div id="futures-tab" class="tab-content">
-                <div class="filter-bar">
-                    <div class="f-filter active" onclick="setFilt('Все', event)">Все</div>
-                    <div class="f-filter" onclick="setFilt('Индексы', event)">Индексы</div>
-                    <div class="f-filter" onclick="setFilt('Энергия', event)">Энергия</div>
-                    <div class="f-filter" onclick="setFilt('Валюта', event)">Валюта</div>
-                    <div class="f-filter" onclick="setFilt('Металлы', event)">Металлы</div>
-                </div>
-
-                <table class="futures-table">
+            <div id=\"forts-tab\" class=\"tab-content\">
+                <table class=\"futures-table\">
                     <thead>
                         <tr>
                             <th>Контракт</th>
-                            <th>Название</th>
-                            <th>ГО, pt</th>
-                            <th>AI Сигнал</th>
+                            <th>Цена</th>
+                            <th>ГО (руб)</th>
+                            <th>Изм. %</th>
                             <th>Действие</th>
                         </tr>
                     </thead>
-                    <tbody id="fList"></tbody>
+                    <tbody id=\"fList\">
+                        <!-- Data from API -->
+                    </tbody>
                 </table>
             </div>
         </main>
     </div>
 
     <script>
-        const FL = [
-            { id:'Si-6.26',   c:'Si',   n:'Фьючерс USD/RUB (Июнь)',     cat:'Валюта',  goPt:'1250', signal:'buy'  },
-            { id:'Ri-6.26',   c:'RI',   n:'Фьючерс RTS (Июнь)',         cat:'Индексы', goPt:'3500', signal:'hold' },
-            { id:'Br-7.26',   c:'BR',   n:'Фьючерс Brent (Июль)',       cat:'Энергия', goPt:'1820', signal:'buy'  },
-            { id:'Ng-6.26',   c:'NG',   n:'Фьючерс Natural Gas (Июнь)', cat:'Энергия', goPt:'2140', signal:'sell' },
-            { id:'Gold-6.26', c:'GOLD', n:'Фьючерс Gold (Июнь)',        cat:'Металлы', goPt:'2870', signal:'buy'  },
-            { id:'Silv-6.26', c:'SILV', n:'Фьючерс Silver (Июнь)',      cat:'Металлы', goPt:'1640', signal:'hold' }
-        ];
-
-        let currentFilter = 'Все';
         let appState = {
-            engine: 'local',
-            groqKey: ''
+            engine: localStorage.getItem('engine') || 'local',
+            groqKey: localStorage.getItem('groqKey') || '',
+            marketData: {}
         };
 
-        function signalLabel(signal) {
-            if (signal === 'buy') return '<span class="badge buy">BUY</span>';
-            if (signal === 'sell') return '<span class="badge sell">SELL</span>';
-            return '<span class="badge hold">HOLD</span>';
-        }
+        document.getElementById('engineMode').value = appState.engine;
+        document.getElementById('groqKey').value = appState.groqKey;
 
         function saveSettings() {
             appState.engine = document.getElementById('engineMode').value;
-            appState.groqKey = document.getElementById('groqKey').value.trim();
-
-            const status = document.getElementById('engineStatus');
-
-            if (appState.engine === 'groq' && appState.groqKey) {
-                status.innerHTML = 'Активирован режим Groq API. Perplexity отключён. Платный search-слой удалён.';
-            } else {
-                appState.engine = 'local';
-                status.innerHTML = 'Активирован локальный бесплатный режим. Perplexity API не используется.';
-            }
+            appState.groqKey = document.getElementById('groqKey').value;
+            localStorage.setItem('engine', appState.engine);
+            localStorage.setItem('groqKey', appState.groqKey);
+            document.getElementById('engineStatus').textContent = 'Режим: ' + (appState.engine === 'groq' ? 'Groq API' : 'Локальный');
         }
 
         function switchTab(tab) {
             document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.getElementById(`t-${tab}`).classList.add('active');
-            document.getElementById(`${tab}-tab`).classList.add('active');
+            document.getElementById('t-' + tab).classList.add('active');
+            document.getElementById(tab + '-tab').classList.add('active');
         }
 
-        function renderF() {
-            const body = document.getElementById('fList');
+        async function fetchMoex() {
+            try {
+                const url = 'https://iss.moex.com/iss/engines/futures/markets/forts/securities.json?iss.meta=off&iss.only=securities,marketdata&securities.columns=SECID,SHORTNAME,INITIALMARGIN,STEPPRICE,MINSTEP,LASTSETTLE&marketdata.columns=SECID,LAST,CHANGE';
+                const resp = await fetch(url);
+                const data = await resp.json();
+                
+                const securities = data.securities.data;
+                const marketdata = data.marketdata.data;
+                
+                let merged = {};
+                securities.forEach(s => {
+                    const md = marketdata.find(m => m[0] === s[0]);
+                    merged[s[0]] = {
+                        secid: s[0],
+                        name: s[1],
+                        margin: s[2],
+                        stepPrice: s[3],
+                        minStep: s[4],
+                        lastSettle: s[5],
+                        last: md ? md[1] : s[5],
+                        change: md ? md[2] : 0
+                    };
+                });
+                
+                appState.marketData = merged;
+                renderForts();
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+            } catch (e) {
+                console.error('MOEX Fetch Error:', e);
+            }
+        }
 
-            const rows = FL
-                .filter(item => currentFilter === 'Все' || item.cat === currentFilter)
+        function renderForts() {
+            const list = document.getElementById('fList');
+            const mainTickers = ['Si', 'Ri', 'Br', 'NG', 'Gold', 'Silv'];
+            
+            const rows = Object.values(appState.marketData)
+                .filter(item => {
+                    const base = item.secid.split('-')[0];
+                    return mainTickers.some(t => base.toLowerCase() === t.toLowerCase());
+                })
+                .sort((a,b) => a.secid.localeCompare(b.secid))
                 .map(item => `
                     <tr>
-                        <td><b>${item.id}</b><br><span class="muted">${item.cat}</span></td>
-                        <td>${item.n}</td>
-                        <td><b>${item.goPt}</b> pt</td>
-                        <td>${signalLabel(item.signal)}</td>
-                        <td>
-                            <button class="action-btn" onclick="ask('Дай структурированный анализ по фьючерсу ${item.id} с ГО в pt, входом, стопом и целями')">
-                                Анализ
-                            </button>
-                        </td>
+                        <td><b>${item.secid}</b><br><span style=\"color:#8b949e; font-size:10px\">${item.name}</span></td>
+                        <td>${item.last || '---'}</td>
+                        <td>${Math.round(item.margin)}</td>
+                        <td style=\"color: ${item.change >= 0 ? '#3fb950' : '#f85149'}\">${item.change || 0}%</td>
+                        <td><button class=\"btn\" style=\"padding: 5px 10px; font-size:11px\" onclick=\"analyze('${item.secid}')\">Анализ</button></td>
                     </tr>
-                `)
-                .join('');
-
-            body.innerHTML = rows;
-        }
-
-        function setFilt(filter, event) {
-            currentFilter = filter;
-            document.querySelectorAll('.f-filter').forEach(el => el.classList.remove('active'));
-            event.target.classList.add('active');
-            renderF();
+                `).join('');
+            list.innerHTML = rows;
         }
 
         function addMessage(text, type = 'ai', isHtml = false) {
             const msgs = document.getElementById('msgs');
             const wrap = document.createElement('div');
-            wrap.className = `message ${type}`;
-
+            wrap.className = 'message ' + type;
             const bubble = document.createElement('div');
             bubble.className = 'msg-bubble';
-
             if (isHtml) {
-                bubble.innerHTML = `<div class="ai-content">${text}</div>`;
+                bubble.innerHTML = '<div class=\"ai-content\">' + text + '</div>';
             } else {
                 bubble.textContent = text;
             }
-
             wrap.appendChild(bubble);
             msgs.appendChild(wrap);
             msgs.scrollTop = msgs.scrollHeight;
         }
 
-        function extractTicker(prompt) {
-            const upper = prompt.toUpperCase();
-            const checks = [
-                'SBER', 'GAZP', 'LKOH', 'ROSN', 'USD/RUB', 'GOLD',
-                'SI-6.26', 'RI-6.26', 'BR-7.26', 'NG-6.26', 'GOLD-6.26', 'SILV-6.26'
-            ];
-            return checks.find(t => upper.includes(t)) || 'ИНСТРУМЕНТ';
-        }
-
-        function buildLocalAnalysis(prompt) {
-            const ticker = extractTicker(prompt);
-            const maybeFuture = FL.find(x => prompt.toUpperCase().includes(x.id.toUpperCase()));
-
-            if (maybeFuture) {
-                return `
-                    <h3>${maybeFuture.id}</h3>
-                    <p><b>Инструмент:</b> ${maybeFuture.n}</p>
-                    <p><b>Категория:</b> ${maybeFuture.cat}</p>
-                    <p><b>ГО:</b> ${maybeFuture.goPt} pt</p>
-                    <p><b>Сигнал:</b> ${maybeFuture.signal.toUpperCase()}</p>
-                    <p><b>Логика:</b> Локальный бесплатный режим формирует структурированный шаблон без платного поискового слоя. Перед сделкой дополнительно проверь ликвидность, спред, текущую серию контракта и волатильность.</p>
-                    <table>
-                        <tr><th>Параметр</th><th>Значение</th></tr>
-                        <tr><td>Контракт</td><td>${maybeFuture.id}</td></tr>
-                        <tr><td>ГО</td><td>${maybeFuture.goPt} pt</td></tr>
-                        <tr><td>Вход</td><td>Требует подтверждения по графику</td></tr>
-                        <tr><td>Стоп</td><td>Определить по локальному минимуму/максимуму</td></tr>
-                        <tr><td>Цели</td><td>Не менее 1:2 к риску</td></tr>
-                    </table>
-                `;
+        async function analyze(secid) {
+            const data = appState.marketData[secid.toUpperCase()];
+            if (!data) {
+                addMessage('Инструмент ' + secid + ' не найден в данных MOEX.', 'ai');
+                return;
             }
 
-            return `
-                <h3>${ticker}</h3>
-                <p><b>Режим:</b> Бесплатный локальный анализ без Perplexity.</p>
-                <p><b>Подход:</b> Rule-based контекст + шаблонная аналитика + опциональный Groq при наличии ключа.</p>
-                <ul>
-                    <li>Проверь тренд на старшем таймфрейме.</li>
-                    <li>Определи ближайшие уровни поддержки и сопротивления.</li>
-                    <li>Оцени новостной фон вручную или через бесплатные внешние источники.</li>
-                    <li>Не входи в позицию без понятного риска и сценария выхода.</li>
-                </ul>
+            const capital = parseFloat(document.getElementById('userCapital').value) || 100000;
+            const riskPct = parseFloat(document.getElementById('userRisk').value) || 1;
+            const riskMoney = capital * (riskPct / 100);
+            
+            // Расчет для примера (ATR-based stop logic placeholder)
+            const stopDistPoints = (data.last * 0.02) / data.minStep; // 2% stop as placeholder
+            const riskPerContract = stopDistPoints * data.stepPrice;
+            const contracts = Math.floor(riskMoney / riskPerContract);
+            const totalMargin = contracts * data.margin;
+
+            const context = `
+Инструмент: ${data.secid} (${data.name})
+Цена: ${data.last}
+ГО: ${data.margin} руб.
+Стоимость шага: ${data.stepPrice}
+Риск на сделку: ${riskMoney} руб. (${riskPct}%)
+Доступно контрактов: ${contracts} (ГО: ${totalMargin} руб.)
             `;
-        }
 
-        async function ask(prompt) {
-            addMessage(prompt, 'user');
-
+            addMessage('Анализ ' + secid + '...', 'user');
+            
             if (appState.engine === 'groq' && appState.groqKey) {
-                addMessage('Выполняю анализ через Groq без Perplexity. Если запрос не пройдет, покажу локальный бесплатный результат.', 'ai');
-
                 try {
+                    const prompt = `Проанализируй ${secid} на основе данных: ${context}. Дай вход, стоп, цели. Не выдумывай ГО. Рассчитай риск на ${contracts} контрактов. Отвечай кратко по существу.`;
                     const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${appState.groqKey}`
+                            'Authorization': 'Bearer ' + appState.groqKey
                         },
                         body: JSON.stringify({
                             model: 'llama-3.3-70b-versatile',
-                            temperature: 0.2,
-                            messages: [
-                                {
-                                    role: 'system',
-                                    content: 'Ты инвестиционный AI-ассистент. Никакого Perplexity и платного поиска. Если речь о фьючерсе, всегда указывай конкретный контракт, ГО в pt, вход, стоп, цели и риск.'
-                                },
-                                {
-                                    role: 'user',
-                                    content: prompt
-                                }
-                            ]
+                            messages: [{role: 'system', content: 'Ты финансовый эксперт MOEX. Используй ТОЛЬКО предоставленные цифры.'}, {role: 'user', content: prompt}]
                         })
                     });
-
-                    const data = await resp.json();
-                    const content = data?.choices?.[0]?.message?.content;
-
-                    if (!content) throw new Error('empty response');
-
-                    addMessage(marked.parse(content), 'ai', true);
-                    return;
+                    const resJson = await resp.json();
+                    addMessage(marked.parse(resJson.choices[0].message.content), 'ai', true);
                 } catch (e) {
-                    addMessage('Groq сейчас недоступен, показываю локальный бесплатный анализ без API.', 'ai');
+                    addMessage('Ошибка Groq. Локальный расчет: ' + context, 'ai');
                 }
+            } else {
+                addMessage('**Локальный расчет (без LLM):**\
+' + context.replace(/\
+/g, '<br>'), 'ai', true);
             }
-
-            addMessage(buildLocalAnalysis(prompt), 'ai', true);
         }
 
         function handleSend() {
             const inp = document.getElementById('msgInp');
-            const value = inp.value.trim();
-            if (!value) return;
-            ask(value);
+            const val = inp.value.trim();
+            if (!val) return;
+            analyze(val);
             inp.value = '';
         }
 
-        document.getElementById('msgInp').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-            }
-        });
-
-        renderF();
+        setInterval(fetchMoex, 60000);
+        fetchMoex();
         saveSettings();
     </script>
 </body>
