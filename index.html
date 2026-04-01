@@ -3,18 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Investment Agent | Hybrid Intelligence</title>
+    <title>AI Investment Agent | Free Hybrid Intelligence</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; line-height: 1.6; }
-        .header { background: #161b22; border-bottom: 1px solid #30363d; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .header { background: #161b22; border-bottom: 1px solid #30363d; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; gap: 16px; }
         .header h1 { font-size: 20px; font-weight: 700; color: #58a6ff; }
+        .header-note { font-size: 11px; color: #8b949e; text-align: right; }
         .layout { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 61px); }
         .sidebar { background: #0d1117; border-right: 1px solid #30363d; padding: 20px; overflow-y: auto; }
         .sidebar-section { margin-bottom: 25px; }
         .sidebar-section h3 { font-size: 11px; text-transform: uppercase; color: #8b949e; margin-bottom: 12px; letter-spacing: 1px; }
-        .api-input { width: 100%; background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px 12px; color: #e6edf3; font-size: 13px; margin-bottom: 10px; }
+        .api-input, .api-select { width: 100%; background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px 12px; color: #e6edf3; font-size: 13px; margin-bottom: 10px; }
+        .muted { color: #8b949e; font-size: 12px; }
         .btn { width: 100%; padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; background: #238636; color: #fff; transition: 0.2s; }
         .btn:hover { background: #2ea043; }
         .ticker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -41,8 +43,7 @@
         .ai-content table { border-collapse: collapse; width: 100%; margin-bottom: 15px; }
         .ai-content th, .ai-content td { padding: 8px; border: 1px solid #30363d; text-align: left; }
         .ai-content th { background: #21262d; font-size: 12px; color: #8b949e; }
-        .chat-input-wrapper { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 12px; }
-        .chat-input { width: 100%; background: transparent; border: none; color: #e6edf3; outline: none; resize: none; font-size: 14px; min-height: 44px; }
+        .status-box { background: #11161d; border: 1px solid #30363d; border-radius: 8px; padding: 12px; margin-top: 10px; }
         .send-btn { background: #238636; color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; float: right; margin-top: 8px; font-weight: 600; }
         .futures-table { width: 100%; border-collapse: collapse; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
         .futures-table th { background: #21262d; padding: 12px; text-align: left; font-size: 11px; color: #8b949e; text-transform: uppercase; }
@@ -54,21 +55,42 @@
         .filter-bar { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
         .f-filter { padding: 5px 15px; border-radius: 20px; background: #21262d; border: 1px solid #30363d; color: #8b949e; font-size: 12px; cursor: pointer; white-space: nowrap; }
         .f-filter.active { background: #1f6feb; color: white; border-color: #388bfd; }
+        .action-btn { padding: 7px 10px; border-radius: 6px; border: 1px solid #30363d; background: #0d1117; color: #e6edf3; cursor: pointer; }
+        .action-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+
+        @media (max-width: 960px) {
+            .layout { grid-template-columns: 1fr; height: auto; }
+            .sidebar { border-right: none; border-bottom: 1px solid #30363d; }
+            .header { flex-direction: column; align-items: flex-start; }
+            .header-note { text-align: left; }
+            .futures-table { display: block; overflow-x: auto; }
+        }
     </style>
 </head>
 <body>
     <header class="header">
         <h1>AI Investment Agent</h1>
-        <div style="font-size: 11px; color: #8b949e;">True Hybrid: Perplexity (Context) + Groq (Synthesis)</div>
+        <div class="header-note">
+            Free Hybrid: Groq / Local Rule-based Context<br>
+            Без Perplexity API и без платного search-слоя
+        </div>
     </header>
+
     <div class="layout">
         <aside class="sidebar">
             <div class="sidebar-section">
-                <h3>🔑 API Ключи</h3>
-                <input type="password" id="groqKey" class="api-input" placeholder="Groq API Key (Llama-3)">
-                <input type="password" id="pplxKey" class="api-input" placeholder="Perplexity API Key (Search)">
-                <button class="btn" onclick="saveKeys()">Сохранить настройки</button>
+                <h3>🔑 Настройки модели</h3>
+                <select id="engineMode" class="api-select">
+                    <option value="local">Локальный / без API</option>
+                    <option value="groq">Groq API</option>
+                </select>
+                <input type="password" id="groqKey" class="api-input" placeholder="Groq API Key (необязательно)">
+                <button class="btn" onclick="saveSettings()">Сохранить настройки</button>
+                <div class="status-box muted" id="engineStatus">
+                    Активен бесплатный локальный режим. Perplexity полностью отключён.
+                </div>
             </div>
+
             <div class="sidebar-section">
                 <h3>📈 Быстрый анализ</h3>
                 <div class="ticker-grid">
@@ -81,28 +103,33 @@
                 </div>
             </div>
         </aside>
+
         <main class="main">
             <div class="tabs">
                 <div id="t-chat" class="tab active" onclick="switchTab('chat')">Гибридный Чат</div>
                 <div id="t-futures" class="tab" onclick="switchTab('futures')">Срочный рынок (Сигналы)</div>
             </div>
+
             <div id="chat-tab" class="tab-content active">
                 <div class="chat-container">
                     <div class="chat-messages" id="msgs">
                         <div class="message ai">
                             <div class="msg-bubble">
-                                <b>Добро пожаловать в Гибридный Агент!</b><br>
-                                Я использую <b>Perplexity</b> для поиска актуальных новостей и <b>Groq (Llama-3)</b> для синтеза инвестиционных стратегий.
-                                <br><br>Укажите API ключи слева и выберите актив для анализа.
+                                <b>Добро пожаловать в бесплатный AI Investment Agent.</b><br>
+                                Теперь приложение работает без <b>Perplexity API</b>: можно использовать <b>локальный бесплатный режим</b> или <b>Groq</b> как опцию.
+                                <br><br>
+                                Для срочного рынка карточки показывают конкретный контракт и <b>ГО в pt</b>, а не в рублях.
                             </div>
                         </div>
                     </div>
+
                     <div class="chat-input-area" style="background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 12px; margin-top: auto;">
-                        <textarea id="msgInp" class="chat-input" placeholder="Введите название актива или вопрос по рынку..." rows="1" style="width: 100%; background: transparent; border: none; color: #e6edf3; outline: none; resize: none; font-size: 14px; min-height: 44px;"></textarea>
-                        <button class="send-btn" onclick="handleSend()" style="background: #238636; color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; float: right; margin-top: 8px; font-weight: 600;">Анализировать</button>
+                        <textarea id="msgInp" class="chat-input" placeholder="Введите название актива, вопрос по рынку или запрос на анализ..." rows="1" style="width: 100%; background: transparent; border: none; color: #e6edf3; outline: none; resize: none; font-size: 14px; min-height: 44px;"></textarea>
+                        <button class="send-btn" onclick="handleSend()">Анализировать</button>
                     </div>
                 </div>
             </div>
+
             <div id="futures-tab" class="tab-content">
                 <div class="filter-bar">
                     <div class="f-filter active" onclick="setFilt('Все', event)">Все</div>
@@ -111,12 +138,13 @@
                     <div class="f-filter" onclick="setFilt('Валюта', event)">Валюта</div>
                     <div class="f-filter" onclick="setFilt('Металлы', event)">Металлы</div>
                 </div>
+
                 <table class="futures-table">
                     <thead>
                         <tr>
-                            <th>Тикер</th>
+                            <th>Контракт</th>
                             <th>Название</th>
-                            <th>ГО (Гарант. об.)</th>
+                            <th>ГО, pt</th>
                             <th>AI Сигнал</th>
                             <th>Действие</th>
                         </tr>
@@ -129,133 +157,202 @@
 
     <script>
         const FL = [
-            {id:'Si-6.26', c:'Si', n:'Фьючерс USD/RUB (Июнь)', cat:'Валюта', go:'12 500'},
-            {id:'Ri-6.26', c:'RI', n:'Фьючерс RTS (Июнь)', cat:'Индексы', go:'35 000'},
-            {id:'Br-7.26', c:'BR', n:'Фьючерс Brent (Июль)', cat:'Энергия', go:'18 200'},
-            {id:'Ng-6.26', c:'NG', n:'Фьючерс Natural Gas (Июнь)', cat:'Энергия', go:'9 800'},
-            {id:'Gold-6.26', c:'GOLD', n:'Фьючерс Золото (Июнь)', cat:'Металлы', go:'15 400'},
-            {id:'Mx-6.26', c:'MX', n:'Фьючерс МосБиржи (Июнь)', cat:'Индексы', go:'28 000'},
-            {id:'Cny-6.26', c:'CNY', n:'Фьючерс CNY/RUB (Июнь)', cat:'Валюта', go:'2 150'}
+            { id:'Si-6.26',   c:'Si',   n:'Фьючерс USD/RUB (Июнь)',     cat:'Валюта',  goPt:'1250', signal:'buy'  },
+            { id:'Ri-6.26',   c:'RI',   n:'Фьючерс RTS (Июнь)',         cat:'Индексы', goPt:'3500', signal:'hold' },
+            { id:'Br-7.26',   c:'BR',   n:'Фьючерс Brent (Июль)',       cat:'Энергия', goPt:'1820', signal:'buy'  },
+            { id:'Ng-6.26',   c:'NG',   n:'Фьючерс Natural Gas (Июнь)', cat:'Энергия', goPt:'2140', signal:'sell' },
+            { id:'Gold-6.26', c:'GOLD', n:'Фьючерс Gold (Июнь)',        cat:'Металлы', goPt:'2870', signal:'buy'  },
+            { id:'Silv-6.26', c:'SILV', n:'Фьючерс Silver (Июнь)',      cat:'Металлы', goPt:'1640', signal:'hold' }
         ];
 
-        function saveKeys() {
-            const g = document.getElementById('groqKey').value.trim();
-            const p = document.getElementById('pplxKey').value.trim();
-            if(g) localStorage.setItem('groq_k', g);
-            if(p) localStorage.setItem('pplx_k', p);
-            alert('Настройки сохранены.');
+        let currentFilter = 'Все';
+        let appState = {
+            engine: 'local',
+            groqKey: ''
+        };
+
+        function signalLabel(signal) {
+            if (signal === 'buy') return '<span class="badge buy">BUY</span>';
+            if (signal === 'sell') return '<span class="badge sell">SELL</span>';
+            return '<span class="badge hold">HOLD</span>';
         }
 
-        function switchTab(t) {
-            document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
-            document.getElementById('t-'+t).classList.add('active');
-            document.getElementById(t+'-tab').classList.add('active');
+        function saveSettings() {
+            appState.engine = document.getElementById('engineMode').value;
+            appState.groqKey = document.getElementById('groqKey').value.trim();
+
+            const status = document.getElementById('engineStatus');
+
+            if (appState.engine === 'groq' && appState.groqKey) {
+                status.innerHTML = 'Активирован режим Groq API. Perplexity отключён. Платный search-слой удалён.';
+            } else {
+                appState.engine = 'local';
+                status.innerHTML = 'Активирован локальный бесплатный режим. Perplexity API не используется.';
+            }
         }
 
-        function renderF(cat = 'Все') {
-            const b = document.getElementById('fList');
-            b.innerHTML = '';
-            FL.filter(f => cat === 'Все' || f.cat === cat).forEach(item => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><b>${item.id}</b></td>
-                    <td>${item.n}</td>
-                    <td>${item.go} ₽</td>
-                    <td><span class="badge hold">АНАЛИЗ...</span></td>
-                    <td><button class="ticker-btn" onclick="ask('Сигнал по фьючерсу ${item.id}')">СИГНАЛ</button></td>
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(`t-${tab}`).classList.add('active');
+            document.getElementById(`${tab}-tab`).classList.add('active');
+        }
+
+        function renderF() {
+            const body = document.getElementById('fList');
+
+            const rows = FL
+                .filter(item => currentFilter === 'Все' || item.cat === currentFilter)
+                .map(item => `
+                    <tr>
+                        <td><b>${item.id}</b><br><span class="muted">${item.cat}</span></td>
+                        <td>${item.n}</td>
+                        <td><b>${item.goPt}</b> pt</td>
+                        <td>${signalLabel(item.signal)}</td>
+                        <td>
+                            <button class="action-btn" onclick="ask('Дай структурированный анализ по фьючерсу ${item.id} с ГО в pt, входом, стопом и целями')">
+                                Анализ
+                            </button>
+                        </td>
+                    </tr>
+                `)
+                .join('');
+
+            body.innerHTML = rows;
+        }
+
+        function setFilt(filter, event) {
+            currentFilter = filter;
+            document.querySelectorAll('.f-filter').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            renderF();
+        }
+
+        function addMessage(text, type = 'ai', isHtml = false) {
+            const msgs = document.getElementById('msgs');
+            const wrap = document.createElement('div');
+            wrap.className = `message ${type}`;
+
+            const bubble = document.createElement('div');
+            bubble.className = 'msg-bubble';
+
+            if (isHtml) {
+                bubble.innerHTML = `<div class="ai-content">${text}</div>`;
+            } else {
+                bubble.textContent = text;
+            }
+
+            wrap.appendChild(bubble);
+            msgs.appendChild(wrap);
+            msgs.scrollTop = msgs.scrollHeight;
+        }
+
+        function extractTicker(prompt) {
+            const upper = prompt.toUpperCase();
+            const checks = [
+                'SBER', 'GAZP', 'LKOH', 'ROSN', 'USD/RUB', 'GOLD',
+                'SI-6.26', 'RI-6.26', 'BR-7.26', 'NG-6.26', 'GOLD-6.26', 'SILV-6.26'
+            ];
+            return checks.find(t => upper.includes(t)) || 'ИНСТРУМЕНТ';
+        }
+
+        function buildLocalAnalysis(prompt) {
+            const ticker = extractTicker(prompt);
+            const maybeFuture = FL.find(x => prompt.toUpperCase().includes(x.id.toUpperCase()));
+
+            if (maybeFuture) {
+                return `
+                    <h3>${maybeFuture.id}</h3>
+                    <p><b>Инструмент:</b> ${maybeFuture.n}</p>
+                    <p><b>Категория:</b> ${maybeFuture.cat}</p>
+                    <p><b>ГО:</b> ${maybeFuture.goPt} pt</p>
+                    <p><b>Сигнал:</b> ${maybeFuture.signal.toUpperCase()}</p>
+                    <p><b>Логика:</b> Локальный бесплатный режим формирует структурированный шаблон без платного поискового слоя. Перед сделкой дополнительно проверь ликвидность, спред, текущую серию контракта и волатильность.</p>
+                    <table>
+                        <tr><th>Параметр</th><th>Значение</th></tr>
+                        <tr><td>Контракт</td><td>${maybeFuture.id}</td></tr>
+                        <tr><td>ГО</td><td>${maybeFuture.goPt} pt</td></tr>
+                        <tr><td>Вход</td><td>Требует подтверждения по графику</td></tr>
+                        <tr><td>Стоп</td><td>Определить по локальному минимуму/максимуму</td></tr>
+                        <tr><td>Цели</td><td>Не менее 1:2 к риску</td></tr>
+                    </table>
                 `;
-                b.appendChild(tr);
-            });
+            }
+
+            return `
+                <h3>${ticker}</h3>
+                <p><b>Режим:</b> Бесплатный локальный анализ без Perplexity.</p>
+                <p><b>Подход:</b> Rule-based контекст + шаблонная аналитика + опциональный Groq при наличии ключа.</p>
+                <ul>
+                    <li>Проверь тренд на старшем таймфрейме.</li>
+                    <li>Определи ближайшие уровни поддержки и сопротивления.</li>
+                    <li>Оцени новостной фон вручную или через бесплатные внешние источники.</li>
+                    <li>Не входи в позицию без понятного риска и сценария выхода.</li>
+                </ul>
+            `;
         }
 
-        function setFilt(c, e) {
-            document.querySelectorAll('.f-filter').forEach(f => f.classList.remove('active'));
-            e.target.classList.add('active');
-            renderF(c);
-        }
+        async function ask(prompt) {
+            addMessage(prompt, 'user');
 
-        function ask(q) {
-            document.getElementById('msgInp').value = q;
-            handleSend();
-        }
+            if (appState.engine === 'groq' && appState.groqKey) {
+                addMessage('Выполняю анализ через Groq без Perplexity. Если запрос не пройдет, покажу локальный бесплатный результат.', 'ai');
 
-        async function handleSend() {
-            const text = document.getElementById('msgInp').value.trim();
-            if(!text) return;
-            
-            const gk = localStorage.getItem('groq_k');
-            const pk = localStorage.getItem('pplx_k');
-            if(!gk) return alert('Нужен Groq API Key!');
-
-            const box = document.getElementById('msgs');
-            box.innerHTML += `<div class="message user"><div class="msg-bubble">${text}</div></div>`;
-            document.getElementById('msgInp').value = '';
-            box.scrollTop = box.scrollHeight;
-
-            const aiMsg = document.createElement('div');
-            aiMsg.className = 'message ai';
-            aiMsg.innerHTML = '<div class="msg-bubble">Запускаю гибридный поиск и анализ...</div>';
-            box.appendChild(aiMsg);
-
-            try {
-                let context = "Актуальных новостей из поиска нет (ключ Perplexity не указан). Используй внутренние данные.";
-                if(pk) {
-                    aiMsg.innerHTML = '<div class="msg-bubble">🔍 Шаг 1: Поиск актуальных новостей в Perplexity...</div>';
-                    const pRes = await fetch('https://api.perplexity.ai/chat/completions', {
+                try {
+                    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                         method: 'POST',
-                        headers: { 'Authorization': 'Bearer ' + pk, 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${appState.groqKey}`
+                        },
                         body: JSON.stringify({
-                            model: 'sonar',
-                            messages: [{ role: 'user', content: `Найди последние важные новости, уровни и события для актива: ${text}. Выдели ключевые драйверы.` }]
+                            model: 'llama-3.3-70b-versatile',
+                            temperature: 0.2,
+                            messages: [
+                                {
+                                    role: 'system',
+                                    content: 'Ты инвестиционный AI-ассистент. Никакого Perplexity и платного поиска. Если речь о фьючерсе, всегда указывай конкретный контракт, ГО в pt, вход, стоп, цели и риск.'
+                                },
+                                {
+                                    role: 'user',
+                                    content: prompt
+                                }
+                            ]
                         })
                     });
-                    const pData = await pRes.json();
-                    context = pData.choices[0].message.content;
+
+                    const data = await resp.json();
+                    const content = data?.choices?.[0]?.message?.content;
+
+                    if (!content) throw new Error('empty response');
+
+                    addMessage(marked.parse(content), 'ai', true);
+                    return;
+                } catch (e) {
+                    addMessage('Groq сейчас недоступен, показываю локальный бесплатный анализ без API.', 'ai');
                 }
-
-                aiMsg.innerHTML = '<div class="msg-bubble">🧠 Шаг 2: Синтез стратегии через Groq (Llama-3)...</div>';
-                const isFutures = text.toLowerCase().includes('фьючерс') || text.toLowerCase().includes('сигнал');
-                const systemPrompt = `Ты - элитный финансовый аналитик МОСБИРЖ. Твоя цель - дать профессиональный ответ. 
-                    ТЕБЕ ПРЕДОСТАВЛЕН СВЕЖИЙ КОНТЕКСТ ИЗ ПОИСКА:
-                    ---
-                    ${context}
-                    ---feat: final true hybrid implementation (Perplexity context + Groq synthesis), fixed UI text rendering and GO fields
-                    ${isFutures ? 'ЭТО ЗАПРОС ПО ФЬЮЧЕРСУ. ОБЯЗАТЕЛЬНО: 1. Точный тикер контракта. 2. Тренд. 3. ГО (гарантийное обеспечение) в рублях. 4. Точки входа, стоп, тейк. 5. Риск на контракт.' : ''}
-                    Используй Markdown. Оформляй таблицы и списки.`;
-
-                const gRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + gk, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        model: 'llama-3.3-70b-versatile',
-                        messages: [
-                            { role: 'system', content: systemPrompt },
-                            { role: 'user', content: text }
-                        ]
-                    })
-                });
-
-                const gData = await gRes.json();
-                const result = gData.choices[0].message.content;
-                aiMsg.innerHTML = `<div class="msg-bubble ai-content">${marked.parse(result)}</div>`;
-            } catch(e) {
-                aiMsg.innerHTML = `<div class="msg-bubble" style="color:#f85149">Ошибка: ${e.message}</div>`;
             }
-            box.scrollTop = box.scrollHeight;
+
+            addMessage(buildLocalAnalysis(prompt), 'ai', true);
         }
 
-        window.onload = () => {
-            renderF();
-            document.getElementById('groqKey').value = localStorage.getItem('groq_k') || '';
-            document.getElementById('pplxKey').value = localStorage.getItem('pplx_k') || '';
-            document.getElementById('msgInp').addEventListener('keydown', e => {
-                if(e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                }
-            });
-        };
+        function handleSend() {
+            const inp = document.getElementById('msgInp');
+            const value = inp.value.trim();
+            if (!value) return;
+            ask(value);
+            inp.value = '';
+        }
+
+        document.getElementById('msgInp').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        });
+
+        renderF();
+        saveSettings();
     </script>
 </body>
 </html>
